@@ -1,0 +1,119 @@
+package vibneiro.dispatchers;
+
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import vibneiro.utils.IdGenerator;
+import vibneiro.utils.time.SystemDateSource;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * Created by SBT-Voroshilin-IB on 28.04.2015.
+ */
+@Ignore("For performance evalatuation")
+public class BalancingDispatcherPerfTest {
+
+    @Test
+    public void testQueueingFairness() throws Exception {
+
+        IdGenerator idGenerator = new IdGenerator("SRC_", new SystemDateSource());
+        BalancingDispatcher dispatcher = new BalancingDispatcher(idGenerator);
+        dispatcher.start();
+
+        final class FibonacciTask implements Runnable {
+
+            private final int n;
+
+            FibonacciTask(int n) {
+                this.n = n;
+            }
+
+            @Override
+            public void run() {
+                fibonacchi(n);
+            }
+
+            public int fibonacchi(int n) {
+                if(n == 0) {
+                    return 0;
+                } else if (n == 1) {
+                    return 1;
+                } else {
+                    return fibonacchi(n - 1) + fibonacchi(n - 2);
+                }
+            }
+        }
+
+        // 4 tasks with different load fractions ~ 1/1/4/4.5 combined in a blocking statement:
+        Futures.successfulAsList(
+                Lists.newArrayList(
+                        dispatcher.dispatchAngGetFuture(new FibonacciTask(10)),
+                        dispatcher.dispatchAngGetFuture(new FibonacciTask(10)),
+                        dispatcher.dispatchAngGetFuture(new FibonacciTask(40)),
+                        dispatcher.dispatchAngGetFuture(new FibonacciTask(45))
+                )).get();
+
+    }
+
+     /*
+     * Tests that order of execution is FIFO
+     * Test invariant: prevValue == curValue - 1
+     */
+    @Test
+    public void testLinearizability() throws Exception {
+
+        IdGenerator idGenerator = new IdGenerator("SRC_", new SystemDateSource());
+        BalancingDispatcher dispatcher = new BalancingDispatcher(idGenerator);
+
+        final String id = idGenerator.nextId();
+        final AtomicInteger prevIndex = new AtomicInteger(-1);
+        final AtomicBoolean failed = new AtomicBoolean(false);
+
+        for (int i = 0; i < 10000; i++) { //This should be enough with high probability to identify bugs in the sequence
+            dispatcher.dispatch(id, new TestTask(id, i, new Callback() {
+                @Override
+                public void callback(final int curIndex) {
+                    if (curIndex - 1 != prevIndex.get()) {
+                        failed.set(true);
+                    }
+
+                    prevIndex.set(curIndex);
+                }
+            }));
+
+            if (failed.get()) {
+                break;
+            }
+        }
+
+        Assert.assertTrue(!failed.get());
+    }
+
+    private interface Callback {
+        void callback(int curIndex);
+    }
+
+    private class TestTask implements Runnable {
+
+        private final int curIndex;
+        private final String id;
+        private final Callback callback;
+
+        private TestTask(String id, int curIndex, Callback callback) {
+            this.id = id;
+            this.curIndex = curIndex;
+            this.callback = callback;
+        }
+
+        @Override
+        public void run() {
+            callback.callback(curIndex);
+        }
+    }
+
+}
