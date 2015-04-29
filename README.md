@@ -23,7 +23,7 @@ For tasks that differ in execution time, some dispatch queues might be more acti
 
 There are 2 versions of this dispatcher:
  - JDK 7 or earlier: based on top of Guava's *ListenableFuture*.
- - JDK 8: based on top of *CompletableFuture*.
+ - JDK 8: based on top of *CompletableFuture*. TBD
 
 ###HashDispatcher
 
