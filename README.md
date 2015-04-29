@@ -24,5 +24,12 @@ There are 2 versions of this dispatcher:
  - JDK 7 or earlier: based on top of Guava's *ListenableFuture*.
  - JDK 8: based on top of *CompletableFuture*.
 
-2. HashDispatcher
-TODO Description
+###HashDispatcher
+
+Requirement: 
+
+TODO
+
+Description:
+
+TODO
