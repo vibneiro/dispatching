@@ -1,5 +1,5 @@
 # Dispatch
-Dispatch is a based concurrency library for JDK 7/8 that provides useful specialized data structures for parallelization of work on multicore architectures
+Dispatch is a based concurrency library for JDK 7/8 that provides specialized dispatchers for parallelization of work on multicore architectures.
 
 Author Ivan Voroshilin
 email vibneiro@gmail.com
