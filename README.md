@@ -10,7 +10,7 @@
 
 ## Types of dispatchers
 
-###BalancingDispatcher:
+###WorkStealingDispatcher:
 
 Requirement: 
 
@@ -26,7 +26,7 @@ The work is spread out more effeciently unlike in the standard implementations. 
 
 There are 2 versions of this dispatcher:
  - JDK 7 or earlier: based on Guava's *ListenableFuture*.
- - JDK 8: based on *CompletableFuture*. TBD
+ - JDK 8: based on *CompletableFuture*.
 
 ###HashDispatcher
 
