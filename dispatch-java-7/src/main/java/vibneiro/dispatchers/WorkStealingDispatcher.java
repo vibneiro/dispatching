@@ -5,41 +5,70 @@ import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import vibneiro.utils.IdGenerator;
+import vibneiro.utils.time.SystemDateSource;
 
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 
 /**
- * @Author Ivan Voroshilin
+ * @Author: Ivan Voroshilin
+ * @email: vibneiro@gmail.com
+ * Work-Stealing Dispatcher.
  *
- * Balancing Dispatcher.
- * Note: For compatability reasons with JDK 6, ListenableFuture from Guava is used.
- *       It can be backported to JDK8 by replacing ListenableFuture with ComplitableFuture and some other changes.
+ * The idea is to treat external submitters in a similar way as workers via disassociation of work queues and workers.
  *
  * Advantage:
- * By separating the queue from the worker, FIFO semantics are retained per dispatchId and the work is evenly
+ * By separating the queue from the worker, FIFO semantics are retained per dispatchId and the work is more evenly
  * spread out as follows. When work-tasks differ in execution time, some dispatch queues might be more active than others causing
- * unfair balance among workers. Free workers are able to take on tasks from the main queue.
+ * unfair balance among workers. Free threads are able to take on tasks from the main queue.
+ *
  * ConcurrentLinkedHashMap from https://code.google.com/p/concurrentlinkedhashmap/ is used for better scalability and cache eviction.
- * This class is expected to be added to the official JDK soon.
+ *
+ * Note: For compatability reasons with JDK 6, ListenableFuture from Guava is used.
+ * It can be backported to JDK8 by replacing ListenableFuture with ComplitableFuture and some other changes.
+ *
  */
-public class BalancingDispatcher implements IDispatcher {
+public class WorkStealingDispatcher implements Dispatcher {
 
-    private static final Logger log = LoggerFactory.getLogger(BalancingDispatcher.class);
+    private static final Logger log = LoggerFactory.getLogger(WorkStealingDispatcher.class);
 
     private ListeningExecutorService service;
     private Striped<Lock> locks;
     private ConcurrentMap<String, ListenableFuture<?>> cachedDispatchQueues;
-    private final IdGenerator idGenerator;
+    IdGenerator idGenerator = new IdGenerator("SRC_", new SystemDateSource());
     private int queueSize = 1000; // by default
+    private int threadsCount = Runtime.getRuntime().availableProcessors();
 
-    public BalancingDispatcher(IdGenerator idGenerator) {
-        this.idGenerator = idGenerator;
+    private WorkStealingDispatcher() {
     }
 
-    public BalancingDispatcher(IdGenerator idGenerator, int queueSize) {
-        this(idGenerator);
-        this.queueSize = queueSize;
+    public static Builder newBuilder() {
+        return new WorkStealingDispatcher().new Builder();
+    }
+
+    public class Builder {
+
+        private Builder() {
+        }
+
+        public Builder setQueueSize(int queueSize) {
+            WorkStealingDispatcher.this.queueSize = queueSize;
+            return this;
+        }
+
+        public Builder setIdGenerator(IdGenerator idGenerator) {
+            WorkStealingDispatcher.this.idGenerator = idGenerator;
+            return this;
+        }
+
+        public Builder setThreadsCount(int threadsCount) {
+            WorkStealingDispatcher.this.threadsCount = threadsCount;
+            return this;
+        }
+
+        public WorkStealingDispatcher build() {
+            return WorkStealingDispatcher.this;
+        }
     }
 
     /**
@@ -49,9 +78,7 @@ public class BalancingDispatcher implements IDispatcher {
     public void dispatch(String dispatchId, Runnable task, boolean omitIfIdExist) {
         if (!omitIfIdExist) {
             dispatch(dispatchId, task);
-        }
-
-        if (!cachedDispatchQueues.containsKey(dispatchId)) {
+        } else if (!cachedDispatchQueues.containsKey(dispatchId)) {
             dispatch(dispatchId, task);
         }
     }
@@ -122,19 +149,13 @@ public class BalancingDispatcher implements IDispatcher {
         return null;
     }
 
-    private static ExecutorService newFixedThreadPoolWithQueueSize(int nThreads, int queueSize) {
-        return new ThreadPoolExecutor(nThreads, nThreads,
-                5000L, TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<Runnable>(queueSize, true), new ThreadPoolExecutor.CallerRunsPolicy());
+    private static ListeningExecutorService newForkJoinPool(int threadsCount) {
+        return  MoreExecutors.listeningDecorator(new ForkJoinPool(threadsCount));
     }
 
     public void start() {
-        // utilize n CPU-cores, queueSize is tunnable
-        service = MoreExecutors.listeningDecorator(
-                newFixedThreadPoolWithQueueSize(Runtime.getRuntime().availableProcessors(), queueSize));
-
+        service = newForkJoinPool(threadsCount);
         locks = Striped.lock(256); // Lock stripe granularity
-
         cachedDispatchQueues = new ConcurrentLinkedHashMap.Builder<String, ListenableFuture<?>>()
                 .maximumWeightedCapacity(queueSize)
                 .build();

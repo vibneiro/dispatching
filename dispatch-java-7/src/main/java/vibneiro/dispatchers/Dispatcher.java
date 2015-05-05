@@ -3,7 +3,7 @@ package vibneiro.dispatchers;
 import javax.annotation.concurrent.ThreadSafe;
 
 /**
- * IDispatcher receives tasks and assigned in to underlying worker thread.
+ * IDispatcher receives tasks and assigns to underlying worker thread.
  * There is a conceptual difference with java ExecutorService. In IDispatcher each task has corresponding dispatchId.
  * If IDispatcher receives task_2 with dispatchId and task_1 with the same dispatchId, was received earlier and still in progress
  * task_2 will be put in waiting state (i.e. in state queue, depends on implementation). Task_2 will be proceed only after
@@ -12,7 +12,7 @@ import javax.annotation.concurrent.ThreadSafe;
  * This feature gives us ability to write simple not thread safe component and still get benefits of multi threading.
  */
 @ThreadSafe
-public interface IDispatcher {
+public interface Dispatcher {
 
     void start();
 

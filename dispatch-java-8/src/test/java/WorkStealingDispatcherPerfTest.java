@@ -1,14 +1,14 @@
-package vibneiro.dispatchers;
-
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
+import vibneiro.dispatchers.WorkStealingDispatcher;
 import vibneiro.utils.IdGenerator;
 import vibneiro.utils.time.SystemDateSource;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -16,14 +16,26 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by SBT-Voroshilin-IB on 28.04.2015.
  */
 @Ignore("For performance evalatuation")
-public class BalancingDispatcherPerfTest {
+public class WorkStealingDispatcherPerfTest {
+
+
+    private WorkStealingDispatcher dispatcher;
+    private IdGenerator idGenerator;
+
+    @Before
+    public void setUp() throws Exception {
+
+        idGenerator = new IdGenerator("SRC_", new SystemDateSource());
+
+        dispatcher = WorkStealingDispatcher
+                .newBuilder()
+                .setIdGenerator(new IdGenerator("SRC_", new SystemDateSource())).
+                        build();
+        dispatcher.start();
+    }
 
     @Test
     public void testQueueingFairness() throws Exception {
-
-        IdGenerator idGenerator = new IdGenerator("SRC_", new SystemDateSource());
-        BalancingDispatcher dispatcher = new BalancingDispatcher(idGenerator);
-        dispatcher.start();
 
         final class FibonacciTask implements Runnable {
 
@@ -50,13 +62,12 @@ public class BalancingDispatcherPerfTest {
         }
 
         // 4 tasks with different load fractions ~ 1/1/4/4.5 combined in a blocking statement:
-        Futures.successfulAsList(
-                Lists.newArrayList(
+        CompletableFuture.allOf(
                         dispatcher.dispatchAngGetFuture(new FibonacciTask(10)),
                         dispatcher.dispatchAngGetFuture(new FibonacciTask(10)),
                         dispatcher.dispatchAngGetFuture(new FibonacciTask(40)),
                         dispatcher.dispatchAngGetFuture(new FibonacciTask(45))
-                )).get();
+        ).get();
 
     }
 
@@ -66,9 +77,6 @@ public class BalancingDispatcherPerfTest {
      */
     @Test
     public void testLinearizability() throws Exception {
-
-        IdGenerator idGenerator = new IdGenerator("SRC_", new SystemDateSource());
-        BalancingDispatcher dispatcher = new BalancingDispatcher(idGenerator);
 
         final String id = idGenerator.nextId();
         final AtomicInteger prevIndex = new AtomicInteger(-1);
