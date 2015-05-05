@@ -10,7 +10,7 @@ import java.util.concurrent.*;
 
 /**
  * @Author: Ivan Voroshilin
- * @email: vibneiro@gmail.com
+ * @email:  vibneiro@gmail.com
  * Work-Stealing Dispatcher.
  *
  * The idea is to treat external submitters in a similar way as workers via disassociation of work queues and workers.
@@ -21,9 +21,6 @@ import java.util.concurrent.*;
  * unfair balance among workers. Free threads are able to take on tasks from the main queue.
  *
  * ConcurrentLinkedHashMap from https://code.google.com/p/concurrentlinkedhashmap/ is used for better scalability and cache eviction.
- *
- * Note: For compatability reasons with JDK 6, ListenableFuture from Guava is used.
- * It can be backported to JDK8 by replacing ListenableFuture with ComplitableFuture and some other changes.
  *
  */
 public class WorkStealingDispatcher implements Dispatcher {
