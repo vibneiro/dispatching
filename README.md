@@ -31,10 +31,10 @@ Details:
 For tasks that differ in execution time, some dispatch queues might be more active than others causing unfair balance among workers (threads). ForkJoinPool is used under the hood for this reason. The work is spread out more effeciently unlike in the standard implementations of Executors by the virtue of work-stealing.
 
 The idea it to separate the queue from the worker, FIFO semantics are retained for tasks with the same dispatchId. 
-[ConcurrentLinkedHashMap](https://code.google.com/p/concurrentlinkedhashmap/) is used for LRU-caching of taskIds.
 
+[ConcurrentLinkedHashMap](https://code.google.com/p/concurrentlinkedhashmap/) is used for LRU-caching of taskIds.
 Possible drawbacks in scalability:
- - With the increase of CPUs there might be a higher contention inside ConcurrentLinkedHashMap. I cannot tell definetely, however, this requires benchmarking.
+With the increase of CPU-cores there might be a higher contention inside ConcurrentLinkedHashMap. I cannot tell definetely, however, how it scales. Thus, this requires additional benchmarking.
 
 There are 2 versions of this dispatcher:
  - JDK 7 or earlier: based on Guava's *ListenableFuture*.
@@ -44,12 +44,12 @@ There are 2 versions of this dispatcher:
 
 When to use:
 
-1. Each tasksId is stricty pinned to a particular Thread by its hash. Each thread has a separate queue
-2. Tasks might be blocked by I/O.
+1. Each tasksId must be  stricty pinned to a particular Thread. 
+2. Tasks mustn't differ much in the computation size.
 
+Details:
+Each tasksId is stricty pinned to its Thread. Each thread has a separate BlockingQueue and processes tasks in the FIFO order.
 
-Description:
+###TODO [PriorityQueuedDispatcher.java]
 
-TODO
-
-###TODO exponential back-off logic
+###TODO Exponential back-off logic
