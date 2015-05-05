@@ -28,7 +28,7 @@ There are 2 versions of this dispatcher:
  - JDK 7 or earlier: based on Guava's *ListenableFuture*.
  - JDK 8: based on *CompletableFuture*.
 
-###HashDispatcher
+###ThreadBoundDispatcher
 
 Requirement: 
 
