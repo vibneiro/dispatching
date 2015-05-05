@@ -10,7 +10,7 @@
 
 ## Types of dispatchers
 
-###WorkStealingDispatcher:
+###[WorkStealingDispatcher.java](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-8/src/main/java/vibneiro/dispatchers/WorkStealingDispatcher.java)
 
 Requirement: 
 
@@ -28,7 +28,7 @@ There are 2 versions of this dispatcher:
  - JDK 7 or earlier: based on Guava's *ListenableFuture*.
  - JDK 8: based on *CompletableFuture*.
 
-###ThreadBoundDispatcher
+###[ThreadBoundDispatcher.java](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-8/src/main/java/vibneiro/dispatchers/ThreadBoundHashDispatcher.java)
 
 Requirement: 
 
