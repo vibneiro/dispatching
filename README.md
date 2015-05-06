@@ -13,8 +13,9 @@
 1. git clone
 2. mvn clean package
 3. Jar-files are under:
-- dispatching\dispatch-java-7\target\dispatch-7.1.0-SNAPSHOT.jar
-- dispatching\dispatch-java-8\target\dispatch-8.1.0-SNAPSHOT.jar
+
+- \dispatching\dispatch-java-7\target\dispatch-7.1.0-SNAPSHOT.jar
+- \dispatching\dispatch-java-8\target\dispatch-8.1.0-SNAPSHOT.jar
 
 ###[Dispatcher.java](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-8/src/main/java/vibneiro/dispatchers/Dispatcher.java)
 Main interface implemented by all dispatchers.
