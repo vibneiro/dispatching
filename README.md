@@ -35,7 +35,7 @@ This allows to run:
 
 When to use: 
 
-1. Unbalanced tasks cause not efficient CPU-utilization. The goal is to use CPU-cores more efficiently.
+1. Unbalanced tasks cause inefficient CPU-utilization. The goal is to use CPU-cores more efficiently.
 2. Tasks are not blocked by I/O and reasonably small to be proccessed. This come in handy, especially for event-driven async processing. 
 
 Details:
