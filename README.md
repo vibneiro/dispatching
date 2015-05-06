@@ -8,6 +8,14 @@
 
 **blog**: ivoroshilin.com
 
+
+##Quick start
+1. git clone
+2. mvn clean package
+3. Jar-files are under:
+- dispatching\dispatch-java-7\target\dispatch-7.1.0-SNAPSHOT.jar
+- dispatching\dispatch-java-8\target\dispatch-8.1.0-SNAPSHOT.jar
+
 ###[Dispatcher.java](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-8/src/main/java/vibneiro/dispatchers/Dispatcher.java)
 Main interface implemented by all dispatchers.
 
@@ -28,17 +36,17 @@ When to use:
 
 Details:
 
-For tasks that differ in execution time, some dispatch queues might be more active than others causing unfair balance among workers (threads). ForkJoinPool is used under the hood for this reason. The work is spread out more effeciently unlike in the standard implementations of Executors by the virtue of work-stealing.
+For tasks that differ in execution time, some dispatch queues might be more active than others causing unfair balance among workers (threads). ForkJoinPool is used under the hood for this reason by default. The work is spread out more effeciently unlike in the standard implementations of Executors by the virtue of work-stealing. However, you can pass in your ExecutorService.
 
-The idea it to separate the queue from the worker, FIFO semantics are retained for tasks with the same dispatchId. 
+The main idea in this dispatcher it to separate the queue from the worker, FIFO semantics are retained for tasks with the same dispatchId. 
 
 [ConcurrentLinkedHashMap](https://code.google.com/p/concurrentlinkedhashmap/) is used for LRU-caching of taskIds.
 Possible drawbacks in scalability:
 With the increase of CPU-cores there might be a higher contention inside ConcurrentLinkedHashMap. I cannot tell definetely, however, how it scales. Thus, this requires additional benchmarking.
 
 There are 2 versions of this dispatcher:
- - JDK 7 or earlier: based on Guava's *ListenableFuture*.
- - JDK 8: based on *CompletableFuture*.
+ - [JDK 7](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-7/src/main/java/vibneiro/dispatchers/WorkStealingDispatcher.java) and later: based on Guava's *ListenableFuture*.
+ - [JDK 8](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-8/src/main/java/vibneiro/dispatchers/WorkStealingDispatcher.java) and later: based on *CompletableFuture*.
 
 ###[ThreadBoundDispatcher.java](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-8/src/main/java/vibneiro/dispatchers/ThreadBoundHashDispatcher.java)
 
