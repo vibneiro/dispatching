@@ -10,12 +10,15 @@
 
 
 ##Quick start
-1. git clone
+1. git clone https://github.com/vibneiro/dispatching.git
+2. cd dispatching
 2. mvn clean package
 3. Jar-files are under:
 
 - \dispatching\dispatch-java-7\target\dispatch-7.1.0-SNAPSHOT.jar
 - \dispatching\dispatch-java-8\target\dispatch-8.1.0-SNAPSHOT.jar
+
+4. See [Usage example](https://github.com/vibneiro/dispatching/tree/master/dispatch-java-8/src/test/java/vibneiro/dispatchers) in the tests
 
 ###[Dispatcher.java](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-8/src/main/java/vibneiro/dispatchers/Dispatcher.java)
 Main interface implemented by all dispatchers.
