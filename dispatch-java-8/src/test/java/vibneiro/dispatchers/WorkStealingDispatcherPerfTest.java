@@ -1,10 +1,9 @@
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.Futures;
+package vibneiro.dispatchers;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import vibneiro.dispatchers.WorkStealingDispatcher;
 import vibneiro.utils.IdGenerator;
 import vibneiro.utils.time.SystemDateSource;
 

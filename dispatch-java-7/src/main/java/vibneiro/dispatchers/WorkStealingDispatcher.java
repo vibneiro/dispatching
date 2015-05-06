@@ -14,7 +14,7 @@ import java.util.concurrent.locks.Lock;
  * @Author: Ivan Voroshilin
  * @email: vibneiro@gmail.com
  * Work-Stealing Dispatcher.
- *
+ * Compatible with JDK 7 and later.
  * The idea is to treat external submitters in a similar way as workers via disassociation of work queues and workers.
  *
  * Advantage:
@@ -32,8 +32,9 @@ public class WorkStealingDispatcher implements Dispatcher {
     private ListeningExecutorService service;
     private Striped<Lock> locks;
     private ConcurrentMap<String, ListenableFuture<?>> cachedDispatchQueues;
-    IdGenerator idGenerator = new IdGenerator("SRC_", new SystemDateSource());
-    private int queueSize = 1000; // by default
+    private IdGenerator idGenerator = new IdGenerator("ID_", new SystemDateSource());
+    private int queueSize = 1000;
+    private int lockStripeSize = 256;
     private int threadsCount = Runtime.getRuntime().availableProcessors();
 
     private WorkStealingDispatcher() {
@@ -46,6 +47,11 @@ public class WorkStealingDispatcher implements Dispatcher {
     public class Builder {
 
         private Builder() {
+        }
+
+        public Builder setLockStripeSize(int lockStripeSize) {
+            WorkStealingDispatcher.this.lockStripeSize = lockStripeSize;
+            return this;
         }
 
         public Builder setQueueSize(int queueSize) {
@@ -63,14 +69,16 @@ public class WorkStealingDispatcher implements Dispatcher {
             return this;
         }
 
+        public Builder setExecutorService(ExecutorService service) {
+            WorkStealingDispatcher.this.service = MoreExecutors.listeningDecorator(service);
+            return this;
+        }
+
         public WorkStealingDispatcher build() {
             return WorkStealingDispatcher.this;
         }
     }
 
-    /**
-     * This dispatch version will omit new task if there already exists task with the same dispatch id.
-     */
     @Override
     public void dispatch(String dispatchId, Runnable task, boolean omitIfIdExist) {
         if (!omitIfIdExist) {
@@ -80,9 +88,6 @@ public class WorkStealingDispatcher implements Dispatcher {
         }
     }
 
-    /**
-     * This dispatch version will internally get unique dispatchId. So will act like ExecutorService.
-     */
     @Override
     public void dispatch(Runnable task) {
         dispatch(idGenerator.nextId(), task);
@@ -92,16 +97,10 @@ public class WorkStealingDispatcher implements Dispatcher {
         return dispatchAngGetFuture(idGenerator.nextId(), task);
     }
 
-    /**
-     * Dispatches task according to contract described in class level java doc.
-     */
     @Override
     public void dispatch(String dispatchId, final Runnable task) {
         dispatchAngGetFuture(dispatchId, task);    }
 
-    /**
-     * Dispatches task according to contract described in class level java doc.
-     */
     public ListenableFuture<?> dispatchAngGetFuture(final String dispatchId, final Runnable task) {
         Lock lock = locks.get(dispatchId);
         lock.lock();
@@ -146,13 +145,15 @@ public class WorkStealingDispatcher implements Dispatcher {
         return null;
     }
 
-    private static ListeningExecutorService newForkJoinPool(int threadsCount) {
+    private static ListeningExecutorService newDefaultForkJoinPool(int threadsCount) {
         return  MoreExecutors.listeningDecorator(new ForkJoinPool(threadsCount));
     }
 
     public void start() {
-        service = newForkJoinPool(threadsCount);
-        locks = Striped.lock(256); // Lock stripe granularity
+        if (service == null) {
+            service = newDefaultForkJoinPool(threadsCount);
+        }
+        locks = Striped.lock(lockStripeSize); // Lock stripe granularity, should be tuned
         cachedDispatchQueues = new ConcurrentLinkedHashMap.Builder<String, ListenableFuture<?>>()
                 .maximumWeightedCapacity(queueSize)
                 .build();

@@ -1,3 +1,5 @@
+package vibneiro.dispatchers;
+
 import org.junit.Test;
 import vibneiro.dispatchers.CountingThreadFactory;
 import vibneiro.dispatchers.Dispatcher;

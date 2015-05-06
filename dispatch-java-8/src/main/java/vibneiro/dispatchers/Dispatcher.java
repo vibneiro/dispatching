@@ -10,17 +10,17 @@ public interface Dispatcher {
     void stop();
 
     /**
-     * This dispatch version will internally get unique dispatchId. So will act like ExecutorService.
+     * Dispatches task by internally generating next unique dispatchId.
      */
     void dispatch(Runnable task);
 
     /**
-     * dispatches task according to contract described in class level java doc.
+     * Dispatches task with specified dispatchId
      */
     void dispatch(String dispatchId, Runnable task);
 
     /**
-     * this dispatch version will omit new task if there already exists task with the same dispatch id.
+     * Dispatches task by ignoring execution of the task, if there already exists task with the same dispatch id.
      */
     void dispatch(String dispatchId, Runnable task, boolean omitIfIdExist);
 }

@@ -12,7 +12,7 @@ import java.util.concurrent.*;
  * @Author: Ivan Voroshilin
  * @email:  vibneiro@gmail.com
  * Work-Stealing Dispatcher.
- *
+ * Compatible with JDK 8 and later.
  * The idea is to treat external submitters in a similar way as workers via disassociation of work queues and workers.
  *
  * Advantage:
@@ -30,8 +30,8 @@ public class WorkStealingDispatcher implements Dispatcher {
     private ExecutorService service;
     private ConcurrentMap<String, CompletableFuture<Void>> cachedDispatchQueues;
 
-    IdGenerator idGenerator = new IdGenerator("SRC_", new SystemDateSource());
-    private int queueSize = 1000; // by default
+    IdGenerator idGenerator = new IdGenerator("ID_", new SystemDateSource());
+    private int queueSize = 1000;
     private int threadsCount = Runtime.getRuntime().availableProcessors();
 
     private WorkStealingDispatcher() {
@@ -61,14 +61,16 @@ public class WorkStealingDispatcher implements Dispatcher {
             return this;
         }
 
+        public Builder setExecutorService(ExecutorService service) {
+            WorkStealingDispatcher.this.service = service;
+            return this;
+        }
+
         public WorkStealingDispatcher build() {
             return WorkStealingDispatcher.this;
         }
     }
 
-    /**
-     * This dispatch version will omit new task if there already exists task with the same dispatch id.
-     */
     @Override
     public void dispatch(String dispatchId, Runnable task, boolean omitIfIdExist) {
         if (!omitIfIdExist) {
@@ -78,9 +80,6 @@ public class WorkStealingDispatcher implements Dispatcher {
         }
     }
 
-    /**
-     * This dispatch version will internally get unique dispatchId. So will act like ExecutorService.
-     */
     @Override
     public void dispatch(Runnable task) {
         dispatch(idGenerator.nextId(), task);
@@ -90,17 +89,11 @@ public class WorkStealingDispatcher implements Dispatcher {
         return dispatchAngGetFuture(idGenerator.nextId(), task);
     }
 
-    /**
-     * Dispatches task according to contract described in class level java doc.
-     */
     @Override
     public void dispatch(String dispatchId, final Runnable task) {
         dispatchAngGetFuture(dispatchId, task);
     }
 
-    /**
-     * Dispatches task according to contract described in class level java doc.
-     */
     public CompletableFuture<Void> dispatchAngGetFuture(String dispatchId, Runnable task) {
 
         long startTime = System.nanoTime();
@@ -120,12 +113,14 @@ public class WorkStealingDispatcher implements Dispatcher {
         return future;
     }
 
-    private static ExecutorService newForkJoinPool() {
-        return Executors.newWorkStealingPool();
+    private static ExecutorService newDefaultForkJoinPool(int threadsCount) {
+        return Executors.newWorkStealingPool(threadsCount);
     }
 
     public void start() {
-        service = newForkJoinPool();
+        if(service == null) {
+            service = newDefaultForkJoinPool(threadsCount);
+        }
         cachedDispatchQueues = new ConcurrentLinkedHashMap.Builder<String, CompletableFuture<Void>>()
                 .maximumWeightedCapacity(queueSize)
                 .build();
