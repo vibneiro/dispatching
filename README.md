@@ -20,6 +20,8 @@
 
 4. See [Usage example](https://github.com/vibneiro/dispatching/tree/master/dispatch-java-8/src/test/java/vibneiro/dispatchers) in the tests
 
+##Description
+
 ###[Dispatcher.java](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-8/src/main/java/vibneiro/dispatchers/Dispatcher.java)
 Main interface implemented by all dispatchers.
 
