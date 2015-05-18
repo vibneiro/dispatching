@@ -43,12 +43,9 @@ public class ThreadBoundHashDispatcherTest {
                 @Override
                 public void run() {
                     for (int j = 0; j < TASKS_PER_THREAD; j++) {
-                        d.dispatch(new Runnable() {
-                            @Override
-                            public void run() {
-                                counter.incrementAndGet();
-                                tasksLatch.countDown();
-                            }
+                        d.dispatch(() -> {
+                            counter.incrementAndGet();
+                            tasksLatch.countDown();
                         });
                     }
                     threadsLatch.countDown();

@@ -19,8 +19,4 @@ public interface Dispatcher {
      */
     void dispatch(String dispatchId, Runnable task);
 
-    /**
-     * Dispatches task by ignoring execution of the task, if there already exists task with the same dispatch id.
-     */
-    void dispatch(String dispatchId, Runnable task, boolean omitIfIdExist);
 }

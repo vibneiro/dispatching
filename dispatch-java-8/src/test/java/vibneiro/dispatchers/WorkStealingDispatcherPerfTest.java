@@ -24,11 +24,11 @@ public class WorkStealingDispatcherPerfTest {
     @Before
     public void setUp() throws Exception {
 
-        idGenerator = new IdGenerator("SRC_", new SystemDateSource());
+        idGenerator = new IdGenerator("ID_", new SystemDateSource());
 
         dispatcher = WorkStealingDispatcher
                 .newBuilder()
-                .setIdGenerator(new IdGenerator("SRC_", new SystemDateSource())).
+                .setIdGenerator(new IdGenerator("ID_", new SystemDateSource())).
                         build();
         dispatcher.start();
     }

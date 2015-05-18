@@ -72,15 +72,6 @@ public class WorkStealingDispatcher implements Dispatcher {
     }
 
     @Override
-    public void dispatch(String dispatchId, Runnable task, boolean omitIfIdExist) {
-        if (!omitIfIdExist) {
-            dispatch(dispatchId, task);
-        } else if (!cachedDispatchQueues.containsKey(dispatchId)) {
-            dispatch(dispatchId, task);
-        }
-    }
-
-    @Override
     public void dispatch(Runnable task) {
         dispatch(idGenerator.nextId(), task);
     }

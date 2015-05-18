@@ -15,11 +15,19 @@ public class ThreadBoundHashDispatcher implements Dispatcher {
 
     private static final long JOIN_TIMEOUT = 10000L;
 
-    private int nThreads = Runtime.getRuntime().availableProcessors();
+    private static final int NOT_FOUND = -1;
+    private static final int nThreads = Runtime.getRuntime().availableProcessors();
+    private static int n = nThreads;
+    private static int threadCounter = -1;
+
+    static {
+        n--; n |= n >> 1; n |= n >> 2;n |= n >> 4; n |= n >> 8; n |= n >> 16; n++;
+    }
 
     private final ThreadFactory threadFactory;
     private final IdGenerator dispatchIdGenerator;
 
+    private int[] buckets;
     private Worker[] workers;
     private Thread[] threads;
 
@@ -30,8 +38,14 @@ public class ThreadBoundHashDispatcher implements Dispatcher {
 
     @Override
     public void start() {
-        workers = new Worker[nThreads];
+        buckets = new int[n];
+
+        for (int i = 0; i < buckets.length; i++) {
+            buckets[i] = NOT_FOUND;
+        }
+
         threads = new Thread[nThreads];
+        workers = new Worker[nThreads];
 
         for (int i = 0; i < nThreads; i++) {
             workers[i] = new Worker();
@@ -83,25 +97,21 @@ public class ThreadBoundHashDispatcher implements Dispatcher {
         }
     }
 
-    @Override
-    public void dispatch(String dispatchId, Runnable task, boolean omitIfIdExist) {
-        if (!omitIfIdExist) {
-            dispatch(dispatchId, task);
-        }
-
-        Worker worker = getWorker(dispatchId);
-        if (!worker.hasKey(dispatchId)) {
-            dispatch(dispatchId, task);
-        }
-    }
-
     private Worker getWorker(String dispatchId) {
-        return workers[(dispatchId.hashCode() & Integer.MAX_VALUE) % nThreads];
+
+        int bucketNum = dispatchId.hashCode() & (buckets.length-1);
+        int workerNum = buckets[bucketNum];
+
+        if(workerNum == NOT_FOUND) {
+            buckets[bucketNum] = ++threadCounter;
+            workerNum = threadCounter;
+        }
+        return workers[workerNum];
     }
 
     private static class Worker implements Runnable {
 
-        private Queue<RunnableWrapper> tasks = new ConcurrentLinkedQueue<RunnableWrapper>();
+        private Queue<RunnableWrapper> tasks = new ConcurrentLinkedQueue<>();
 
         private final Object lock = new Object();
         private final AtomicInteger count = new AtomicInteger();
