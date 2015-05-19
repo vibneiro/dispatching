@@ -4,8 +4,8 @@ import org.junit.Test;
 import vibneiro.dispatchers.CountingThreadFactory;
 import vibneiro.dispatchers.ThreadBoundHashDispatcher;
 import vibneiro.dispatchers.Dispatcher;
-import vibneiro.utils.IdGenerator;
-import vibneiro.utils.time.SystemDateSource;
+import vibneiro.idgenerators.IdGenerator;
+import vibneiro.idgenerators.time.SystemDateSource;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
@@ -31,6 +31,7 @@ public class ThreadBoundHashDispatcherTest {
         ThreadBoundHashDispatcher d = new ThreadBoundHashDispatcher(factory, generator);
         d.start();
         testAllTasks(d);
+        d.stop();
     }
 
     private void testAllTasks(final Dispatcher d) throws InterruptedException {

@@ -1,9 +1,13 @@
 package vibneiro.utils;
 
-import vibneiro.utils.time.DateSource;
+import vibneiro.idgenerators.time.DateSource;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.concurrent.atomic.AtomicInteger;
-
+/*
+ * @Author: Ivan Voroshilin
+ * @email:  vibneiro@gmail.com
+ * We don't use LongAdder intentionally, because it doesn't have atomic getAndIncrement()
+ */
 @ThreadSafe
 public class IdGenerator {
 

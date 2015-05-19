@@ -8,8 +8,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import vibneiro.dispatchers.WorkStealingDispatcher;
-import vibneiro.utils.IdGenerator;
-import vibneiro.utils.time.SystemDateSource;
+import vibneiro.idgenerators.IdGenerator;
+import vibneiro.idgenerators.time.SystemDateSource;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -111,11 +111,9 @@ public class WorkStealingDispatcherPerfTest {
     private class TestTask implements Runnable {
 
         private final int curIndex;
-        private final String id;
         private final Callback callback;
 
         private TestTask(String id, int curIndex, Callback callback) {
-            this.id = id;
             this.curIndex = curIndex;
             this.callback = callback;
         }

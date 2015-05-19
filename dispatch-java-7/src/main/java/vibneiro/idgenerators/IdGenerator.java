@@ -1,9 +1,8 @@
-package vibneiro.utils;
-
-import vibneiro.utils.time.DateSource;
+package vibneiro.idgenerators;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.concurrent.atomic.AtomicInteger;
+import vibneiro.idgenerators.time.DateSource;
 
 @ThreadSafe
 public class IdGenerator {

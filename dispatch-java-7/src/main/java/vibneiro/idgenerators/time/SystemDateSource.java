@@ -1,4 +1,4 @@
-package vibneiro.utils.time;
+package vibneiro.idgenerators.time;
 
 public class SystemDateSource implements DateSource {
     @Override

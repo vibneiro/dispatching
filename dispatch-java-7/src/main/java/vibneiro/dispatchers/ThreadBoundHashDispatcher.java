@@ -2,34 +2,31 @@ package vibneiro.dispatchers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import vibneiro.utils.IdGenerator;
+import vibneiro.idgenerators.IdGenerator;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@ThreadSafe
 public class ThreadBoundHashDispatcher implements Dispatcher {
 
     private static final Logger log = LoggerFactory.getLogger(ThreadBoundHashDispatcher.class);
 
     private static final long JOIN_TIMEOUT = 10000L;
-
-    private static final int NOT_FOUND = -1;
-    private static final int nThreads = Runtime.getRuntime().availableProcessors();
-    private static int n = nThreads;
-    private static int threadCounter = -1;
-
-    static {
-        n--; n |= n >> 1; n |= n >> 2;n |= n >> 4; n |= n >> 8; n |= n >> 16; n++;
-    }
+    // +1 more thread for compensation
+    private static final int nThreads = Runtime.getRuntime().availableProcessors() + 1;
 
     private final ThreadFactory threadFactory;
     private final IdGenerator dispatchIdGenerator;
 
-    private int[] buckets;
     private Worker[] workers;
     private Thread[] threads;
+
+    private volatile boolean started;
+    private volatile boolean stopped;
 
     public ThreadBoundHashDispatcher(ThreadFactory threadFactory, IdGenerator dispatchIdGenerator) {
         this.threadFactory = threadFactory;
@@ -38,14 +35,15 @@ public class ThreadBoundHashDispatcher implements Dispatcher {
 
     @Override
     public void start() {
-        buckets = new int[n];
 
-        for (int i = 0; i < buckets.length; i++) {
-            buckets[i] = NOT_FOUND;
+        if(started) {
+            throw new RuntimeException("Already started or in progress");
         }
 
-        threads = new Thread[nThreads];
+        started  = true;
+
         workers = new Worker[nThreads];
+        threads = new Thread[nThreads];
 
         for (int i = 0; i < nThreads; i++) {
             workers[i] = new Worker();
@@ -56,6 +54,13 @@ public class ThreadBoundHashDispatcher implements Dispatcher {
 
     @Override
     public void stop() {
+
+        if(stopped) {
+            throw new RuntimeException("Already stopped or in progress");
+        }
+
+        stopped  = true;
+
         for (Thread thread : threads) {
             thread.interrupt();
         }
@@ -98,15 +103,9 @@ public class ThreadBoundHashDispatcher implements Dispatcher {
     }
 
     private Worker getWorker(String dispatchId) {
-
-        int bucketNum = dispatchId.hashCode() & (buckets.length-1);
-        int workerNum = buckets[bucketNum];
-
-        if(workerNum == NOT_FOUND) {
-            buckets[bucketNum] = ++threadCounter;
-            workerNum = threadCounter;
-        }
-        return workers[workerNum];
+        // despite that modulo is expensive, the requirement is to strictly bound dispatchId to a distinct Thread.
+        // Thus, bit-masking for cheap indexing is more expensive for this usecase.
+        return workers[(dispatchId.hashCode() & Integer.MAX_VALUE) % nThreads];
     }
 
     private static class Worker implements Runnable {

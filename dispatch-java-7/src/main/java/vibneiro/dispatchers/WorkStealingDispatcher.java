@@ -4,9 +4,10 @@ import com.google.common.util.concurrent.*;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import vibneiro.utils.IdGenerator;
-import vibneiro.utils.time.SystemDateSource;
+import vibneiro.idgenerators.IdGenerator;
+import vibneiro.idgenerators.time.SystemDateSource;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 
@@ -25,6 +26,7 @@ import java.util.concurrent.locks.Lock;
  * ConcurrentLinkedHashMap from https://code.google.com/p/concurrentlinkedhashmap/ is used for better scalability and cache eviction.
  *
  */
+@ThreadSafe
 public class WorkStealingDispatcher implements Dispatcher {
 
     private static final Logger log = LoggerFactory.getLogger(WorkStealingDispatcher.class);
@@ -76,15 +78,6 @@ public class WorkStealingDispatcher implements Dispatcher {
 
         public WorkStealingDispatcher build() {
             return WorkStealingDispatcher.this;
-        }
-    }
-
-    @Override
-    public void dispatch(String dispatchId, Runnable task, boolean omitIfIdExist) {
-        if (!omitIfIdExist) {
-            dispatch(dispatchId, task);
-        } else if (!cachedDispatchQueues.containsKey(dispatchId)) {
-            dispatch(dispatchId, task);
         }
     }
 
