@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ThreadFactory;
 
 @ThreadSafe
-public class ThreadBoundHashDispatcher implements Dispatcher {
+public class ThreadBoundHashDispatcher implements Dispatcher, ThreadCompletedListener {
 
     private static final Logger log = LoggerFactory.getLogger(ThreadBoundHashDispatcher.class);
 
@@ -45,9 +45,8 @@ public class ThreadBoundHashDispatcher implements Dispatcher {
         threads = new Thread[nThreads];
 
         for (int i = 0; i < nThreads; i++) {
-            workers[i] = new Worker();
-            threads[i] = threadFactory.newThread(workers[i]);
-            threads[i].start();
+            workers[i] = new Worker(i, this);
+            createNewThread(i);
         }
     }
 
@@ -107,10 +106,30 @@ public class ThreadBoundHashDispatcher implements Dispatcher {
         return workers[(dispatchId.hashCode() & Integer.MAX_VALUE) % nThreads];
     }
 
+    private void createNewThread(int workerIndex) {
+        threads[workerIndex] = threadFactory.newThread(workers[workerIndex]);
+        threads[workerIndex].start();
+        log.warn("{} Thread[{}] started", threads[workerIndex].getName());
+    }
+
+    @Override
+    public void notifyOnThreadCompleted(int workerIndex) {
+        if(!stopped) {
+            createNewThread(workerIndex);
+        }
+    }
+
     private static class Worker implements Runnable {
 
         private Queue<RunnableWrapper> tasks = new ConcurrentLinkedQueue<>();
         private final Object lock = new Object();
+        private final ThreadCompletedListener listener;
+        private final int workerIndex;
+
+        public Worker(int workerIndex, ThreadCompletedListener listener) {
+            this.workerIndex = workerIndex;
+            this.listener = listener;
+        }
 
         public boolean hasKey(String dispatchKey) {
             for (RunnableWrapper task : tasks) {
@@ -168,6 +187,12 @@ public class ThreadBoundHashDispatcher implements Dispatcher {
                 log.info("{} - Interrupted", this);
             } catch (Throwable e) {
                 log.info("{} - ", this, e);
+            } finally {
+                log.warn("{} - Ended", this);
+                // Thread is about to end for some reason
+                synchronized (lock) {
+                    listener.notifyOnThreadCompleted(workerIndex);
+                }
             }
         }
     }

@@ -11,9 +11,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Created by SBT-Voroshilin-IB on 28.04.2015.
- */
 @Ignore("For performance evalatuation")
 public class WorkStealingDispatcherPerfTest {
 
