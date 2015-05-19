@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import vibneiro.utils.IdGenerator;
 import vibneiro.idgenerators.time.SystemDateSource;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.concurrent.*;
 
 /**
@@ -23,6 +24,7 @@ import java.util.concurrent.*;
  * ConcurrentLinkedHashMap from https://code.google.com/p/concurrentlinkedhashmap/ is used for better scalability and cache eviction.
  *
  */
+@ThreadSafe
 public class WorkStealingDispatcher implements Dispatcher {
 
     private static final Logger log = LoggerFactory.getLogger(WorkStealingDispatcher.class);
@@ -33,6 +35,9 @@ public class WorkStealingDispatcher implements Dispatcher {
     IdGenerator idGenerator = new IdGenerator("ID_", new SystemDateSource());
     private int queueSize = 1000;
     private int threadsCount = Runtime.getRuntime().availableProcessors();
+
+    private volatile boolean started;
+    private volatile boolean stopped;
 
     private WorkStealingDispatcher() {
     }
@@ -109,6 +114,13 @@ public class WorkStealingDispatcher implements Dispatcher {
     }
 
     public void start() {
+
+        if(started) {
+            throw new RuntimeException("Already started or in progress");
+        }
+
+        started  = true;
+
         if(service == null) {
             service = newDefaultForkJoinPool(threadsCount);
         }
@@ -118,6 +130,13 @@ public class WorkStealingDispatcher implements Dispatcher {
     }
 
     public void stop() {
+
+        if(stopped) {
+            throw new RuntimeException("Already stopped or in progress");
+        }
+
+        stopped  = true;
+
         service.shutdown();
     }
 

@@ -8,7 +8,6 @@ import javax.annotation.concurrent.ThreadSafe;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @ThreadSafe
 public class ThreadBoundHashDispatcher implements Dispatcher {
@@ -113,7 +112,6 @@ public class ThreadBoundHashDispatcher implements Dispatcher {
         private Queue<RunnableWrapper> tasks = new ConcurrentLinkedQueue<>();
 
         private final Object lock = new Object();
-        private final AtomicInteger count = new AtomicInteger();
 
         public boolean hasKey(String dispatchKey) {
             for (RunnableWrapper task : tasks) {
@@ -125,12 +123,12 @@ public class ThreadBoundHashDispatcher implements Dispatcher {
         }
 
         public void submit(RunnableWrapper runnable) throws InterruptedException {
-            log.debug("{} - task added: {}. Queue size: {}", this, runnable, count);
-
             tasks.offer(runnable);
 
-            if (count.getAndIncrement() == 0) {
-                log.debug("{} - awake worker", this);
+            log.debug("{} - task added: {}. Queue size: {}", this, runnable, tasks.size());
+
+            if (!tasks.isEmpty()) {
+                log.debug("{} - awaking worker", this);
             }
 
             synchronized (lock) {
@@ -145,10 +143,10 @@ public class ThreadBoundHashDispatcher implements Dispatcher {
                     synchronized (lock) {
                         log.debug("{} - worker is sleeping. No work to do");
 
-                        if (count.get() == 0) {
+                        if (tasks.isEmpty()) {
                             while (true) {
                                 lock.wait(1000);
-                                if (count.get() != 0) {
+                                if (!tasks.isEmpty()) {
                                     break;
                                 }
                             }
@@ -164,7 +162,7 @@ public class ThreadBoundHashDispatcher implements Dispatcher {
                         } catch (Throwable e) {
                             log.error("Error executing task", e);
                         }
-                    } while (count.decrementAndGet() > 0);
+                    } while (!tasks.isEmpty());
 
                 }
             } catch (InterruptedException e) {

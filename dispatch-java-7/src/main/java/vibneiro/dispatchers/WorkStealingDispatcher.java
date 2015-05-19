@@ -39,6 +39,9 @@ public class WorkStealingDispatcher implements Dispatcher {
     private int lockStripeSize = 256;
     private int threadsCount = Runtime.getRuntime().availableProcessors();
 
+    private volatile boolean started;
+    private volatile boolean stopped;
+
     private WorkStealingDispatcher() {
     }
 
@@ -143,6 +146,13 @@ public class WorkStealingDispatcher implements Dispatcher {
     }
 
     public void start() {
+
+        if(started) {
+            throw new RuntimeException("Already started or in progress");
+        }
+
+        started  = true;
+
         if (service == null) {
             service = newDefaultForkJoinPool(threadsCount);
         }
@@ -153,6 +163,13 @@ public class WorkStealingDispatcher implements Dispatcher {
     }
 
     public void stop() {
+
+        if(stopped) {
+            throw new RuntimeException("Already stopped or in progress");
+        }
+
+        stopped  = true;
+
         service.shutdown();
     }
 
