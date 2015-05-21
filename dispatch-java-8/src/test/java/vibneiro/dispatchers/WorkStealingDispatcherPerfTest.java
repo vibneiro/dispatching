@@ -4,7 +4,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import vibneiro.utils.IdGenerator;
+import vibneiro.idgenerators.IdGenerator;
 import vibneiro.idgenerators.time.SystemDateSource;
 
 import java.util.concurrent.CompletableFuture;

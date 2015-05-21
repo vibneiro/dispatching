@@ -2,7 +2,7 @@ package vibneiro.dispatchers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import vibneiro.utils.IdGenerator;
+import vibneiro.idgenerators.IdGenerator;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Queue;

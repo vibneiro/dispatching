@@ -1,7 +1,7 @@
 package vibneiro.dispatchers;
 
 import org.junit.Test;
-import vibneiro.utils.IdGenerator;
+import vibneiro.idgenerators.IdGenerator;
 import vibneiro.idgenerators.time.SystemDateSource;
 
 import java.util.concurrent.CountDownLatch;

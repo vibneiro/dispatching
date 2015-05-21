@@ -3,7 +3,7 @@ package vibneiro.dispatchers;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import vibneiro.utils.IdGenerator;
+import vibneiro.idgenerators.IdGenerator;
 import vibneiro.idgenerators.time.SystemDateSource;
 
 import javax.annotation.concurrent.ThreadSafe;
