@@ -44,7 +44,7 @@ For tasks that differ in execution time, some dispatch queues might be more acti
 
 The main idea in this dispatcher it to separate the queue from the worker, FIFO semantics are retained for tasks with the same dispatchId. 
 
-Prunning of the map for entries having completed futures is done on reaching cache capacity (atomically) via WeakReference values.
+Prunning of the map happens only for entries having completed futures and is done on reaching cache capacity (atomically) via WeakReference values. tryLock is used for optimistic cache eviction, the idea is inherited from Guava/Caffeine projects.
 
 There are 2 versions of this dispatcher:
  - [JDK 7](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-7/src/main/java/vibneiro/dispatchers/WorkStealingDispatcher.java) and later: based on Guava's *ListenableFuture*.
