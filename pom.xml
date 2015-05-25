@@ -24,12 +24,6 @@
 
     <dependencies>
 
-        <dependency>
-            <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
-            <artifactId>concurrentlinkedhashmap-lru</artifactId>
-            <version>1.4.2</version>
-        </dependency>
-
         <!-- logging -->
         <dependency>
             <groupId>ch.qos.logback</groupId>

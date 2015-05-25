@@ -1,13 +1,14 @@
 package vibneiro.dispatchers;
 
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import vibneiro.cache.WeakReferenceByValue;
 import vibneiro.idgenerators.IdGenerator;
 import vibneiro.idgenerators.time.SystemDateSource;
 
+import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
+import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.concurrent.*;
 
@@ -23,7 +24,8 @@ import java.util.concurrent.*;
  * spread out as follows. When work-tasks differ in execution time, some dispatch queues might be more active than others causing
  * unfair balance among workers. Free threads are able to take on tasks from the main queue.
  *
- * ConcurrentLinkedHashMap from https://code.google.com/p/concurrentlinkedhashmap/ is used for better scalability and cache eviction.
+ * Cache eviction is managed by weakReference values  on reaching a threshold = cache size.
+ * In this case, an attempt is made to evict entries having garbage-collected values.
  *
  */
 @ThreadSafe
@@ -95,36 +97,81 @@ public class WorkStealingDispatcher implements Dispatcher {
         dispatchAngGetFuture(dispatchId, task);
     }
 
+    //TODO 2 Check races fore eviction, not atomic with get
     public CompletableFuture<Void> dispatchAngGetFuture(String dispatchId, Runnable task) {
 
         long startTime = System.nanoTime();
+        WeakReferenceByValue<CompletableFuture<Void>> ref;
+        try {
+            //TODO 3 return Future
+            ref = cachedDispatchQueues.compute(dispatchId, (k, queueReference) -> {
 
-        WeakReferenceByValue<CompletableFuture<Void>> ref = cachedDispatchQueues.compute(dispatchId, (k, queueReference) -> {
+                CompletableFuture<Void> value;
+
+                Runnable completed = () -> {
+                    log.debug("Completed task execution for dispatchId[{}]: time[{}]ms", dispatchId, (System.nanoTime() - startTime) / 1_000_000);
+                };
+
+                if (queueReference == null) {
                     log.debug("Start task execution for new dispatchId[{}]: ", dispatchId);
-
-                    if (queueReference == null) {
-                        return new WeakReferenceByValue<>(dispatchId, CompletableFuture.runAsync(task), valueReferenceQueue);
-                    }
-
-                    CompletableFuture<Void> value = queueReference.get();
+                    queueReference = new WeakReferenceByValue<>(dispatchId, value = CompletableFuture.runAsync(task), valueReferenceQueue);
+                } else {
+                    value = queueReference.get();
                     if (value != null) {
-                        value.thenRunAsync(task);
+                        log.debug("Start task execution for existing dispatchId[{}]: ", dispatchId);
+                        value.thenRun(task);
                     }
-
-                    value.thenRun(() -> log.debug("Completed task execution for new dispatchId[{}]: time[{}]ms", dispatchId, (System.nanoTime() - startTime) / 1_000_000));
-
-                    return queueReference;
                 }
-        );
 
-/*
-            return (queue == null)
-                    ? CompletableFuture.runAsync(task)
-                    : { queue.thenRunAsync(task);
-            });
-*/
+                value.thenRun(completed);
+                return queueReference;
+                }
+            );
+        } catch(Throwable e) {
+
+        } finally {
+            tryToPruneCache();
+        }
 
         return ref.get();
+    }
+
+    private boolean shouldPruneCache() {
+        return cachedDispatchQueues.size() > queueSize;
+    }
+
+    private void tryToPruneCache() {
+        if (evictionLock.tryLock()) {
+            try {
+                drainValueReferences();
+            } finally {
+                evictionLock.unlock();
+            }
+        }
+    }
+
+    //TODO 1 Check
+    @GuardedBy("evictionLock")
+    private void drainValueReferences() {
+
+        if (!shouldPruneCache()) {
+            return;
+        }
+
+        Reference<? extends CompletableFuture<?>> valueRef;
+
+        while ((valueRef = valueReferenceQueue.poll()) != null) { // get GC-ed valueReference
+
+            @SuppressWarnings("unchecked")
+            WeakReferenceByValue<CompletableFuture<?>> ref = (WeakReferenceByValue<CompletableFuture<?>>) valueRef;
+            String dispatchId = (String)ref.getKeyReference();
+
+            if (dispatchId != null) {
+                log.debug("Attempting to remove a key {} of a GC-ed value from the cache", dispatchId);
+                  cachedDispatchQueues.keySet().remove(dispatchId);
+                    log.debug("Removed a key {} from the cache", dispatchId);
+            }
+        }
     }
 
     private static ExecutorService newDefaultForkJoinPool(int threadsCount) {

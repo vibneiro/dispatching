@@ -59,10 +59,10 @@ public class WorkStealingDispatcherPerfTest {
 
         // 4 tasks with different load fractions ~ 1/1/4/4.5 combined in a blocking statement:
         CompletableFuture.allOf(
-                        dispatcher.dispatchAngGetFuture(new FibonacciTask(10)),
-                        dispatcher.dispatchAngGetFuture(new FibonacciTask(10)),
-                        dispatcher.dispatchAngGetFuture(new FibonacciTask(40)),
-                        dispatcher.dispatchAngGetFuture(new FibonacciTask(45))
+                        dispatcher.dispatchAngGetFuture("1", new FibonacciTask(10)),
+                        dispatcher.dispatchAngGetFuture("1", new FibonacciTask(10)),
+                        dispatcher.dispatchAngGetFuture("1", new FibonacciTask(40)),
+                        dispatcher.dispatchAngGetFuture("1", new FibonacciTask(45))
         ).get();
 
     }
@@ -74,20 +74,21 @@ public class WorkStealingDispatcherPerfTest {
     @Test
     public void testLinearizability() throws Exception {
 
-        final String id = idGenerator.nextId();
+        final String id = idGenerator.nextId(); // single FIFO bucket
         final AtomicInteger prevIndex = new AtomicInteger(-1);
         final AtomicBoolean failed = new AtomicBoolean(false);
 
         for (int i = 0; i < 10000; i++) { //This should be enough with high probability to identify bugs in the sequence
-            dispatcher.dispatch(id, new TestTask(id, i, new Callback() {
-                @Override
-                public void callback(final int curIndex) {
-                    if (curIndex - 1 != prevIndex.get()) {
-                        failed.set(true);
-                    }
+            final int idx = i;
+            dispatcher.dispatch(id, new TestTask(id, i, curIndex -> {
 
-                    prevIndex.set(curIndex);
+                System.out.println("idx: " + idx + " curIndex = " + curIndex + " prevIndex = " + prevIndex);
+
+                if (curIndex - 1 != prevIndex.get()) {
+                    failed.set(true);
                 }
+
+                prevIndex.set(curIndex);
             }));
 
             if (failed.get()) {

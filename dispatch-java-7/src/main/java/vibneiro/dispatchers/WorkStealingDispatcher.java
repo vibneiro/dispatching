@@ -188,7 +188,7 @@ public class WorkStealingDispatcher implements Dispatcher {
             String dispatchId = (String)ref.getKeyReference();
 
             if (dispatchId != null) {
-                log.debug("Attemting to remove a key {} of a GC-ed value from the cache", dispatchId);
+                log.debug("Attempting to remove a key {} of a GC-ed value from the cache", dispatchId);
 
                 Lock lock = cacheLocks.get(dispatchId); // do it atomically
                 lock.lock();
