@@ -44,9 +44,7 @@ For tasks that differ in execution time, some dispatch queues might be more acti
 
 The main idea in this dispatcher it to separate the queue from the worker, FIFO semantics are retained for tasks with the same dispatchId. 
 
-[ConcurrentLinkedHashMap](https://code.google.com/p/concurrentlinkedhashmap/) is used for LRU-caching of taskIds.
-Possible drawbacks in scalability:
-With the increase of CPU-cores there might be a higher contention inside ConcurrentLinkedHashMap. I cannot tell definetely, however, how it scales. Thus, this requires additional benchmarking.
+Prunning of the map for entries having completed futures is done on reaching cache capacity (atomically) via WeakReference values.
 
 There are 2 versions of this dispatcher:
  - [JDK 7](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-7/src/main/java/vibneiro/dispatchers/WorkStealingDispatcher.java) and later: based on Guava's *ListenableFuture*.
