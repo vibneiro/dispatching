@@ -3,10 +3,12 @@ package vibneiro.dispatchers;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import vibneiro.cache.WeakReferenceByValue;
 import vibneiro.idgenerators.IdGenerator;
 import vibneiro.idgenerators.time.SystemDateSource;
 
 import javax.annotation.concurrent.ThreadSafe;
+import java.lang.ref.ReferenceQueue;
 import java.util.concurrent.*;
 
 /**
@@ -30,11 +32,14 @@ public class WorkStealingDispatcher implements Dispatcher {
     private static final Logger log = LoggerFactory.getLogger(WorkStealingDispatcher.class);
 
     private ExecutorService service;
-    private ConcurrentMap<String, CompletableFuture<Void>> cachedDispatchQueues;
 
     IdGenerator idGenerator = new IdGenerator("ID_", new SystemDateSource());
     private int queueSize = 1000;
     private int threadsCount = Runtime.getRuntime().availableProcessors();
+    private ConcurrentMap<String, WeakReferenceByValue<CompletableFuture<Void>>> cachedDispatchQueues;
+    //private ConcurrentMap<String, CompletableFuture<Void>> cachedDispatchQueues;
+    private ReferenceQueue<CompletableFuture<Void>> valueReferenceQueue;
+
 
     private volatile boolean started;
     private volatile boolean stopped;
@@ -94,19 +99,32 @@ public class WorkStealingDispatcher implements Dispatcher {
 
         long startTime = System.nanoTime();
 
-        CompletableFuture future = cachedDispatchQueues.compute(dispatchId, (k, queue) -> {
-            log.debug("Start task execution for new dispatchId[{}]: ",  dispatchId);
+        WeakReferenceByValue<CompletableFuture<Void>> ref = cachedDispatchQueues.compute(dispatchId, (k, queueReference) -> {
+                    log.debug("Start task execution for new dispatchId[{}]: ", dispatchId);
 
-            return (queue == null)
-                    ? CompletableFuture.runAsync(task)
-                    : queue.thenRunAsync(task);
-            });
+                    if (queueReference == null) {
+                        return new WeakReferenceByValue<>(dispatchId, CompletableFuture.runAsync(task), valueReferenceQueue);
+                    }
 
-        future.thenRun(
-                () -> log.debug("Completed task execution for new dispatchId[{}]: time[{}]ms", dispatchId, (System.nanoTime() - startTime) / 1_000_000)
+                    CompletableFuture<Void> value = queueReference.get();
+                    if (value != null) {
+                        value.thenRunAsync(task);
+                    }
+
+                    value.thenRun(() -> log.debug("Completed task execution for new dispatchId[{}]: time[{}]ms", dispatchId, (System.nanoTime() - startTime) / 1_000_000));
+
+                    return queueReference;
+                }
         );
 
-        return future;
+/*
+            return (queue == null)
+                    ? CompletableFuture.runAsync(task)
+                    : { queue.thenRunAsync(task);
+            });
+*/
+
+        return ref.get();
     }
 
     private static ExecutorService newDefaultForkJoinPool(int threadsCount) {
@@ -124,9 +142,8 @@ public class WorkStealingDispatcher implements Dispatcher {
         if(service == null) {
             service = newDefaultForkJoinPool(threadsCount);
         }
-        cachedDispatchQueues = new ConcurrentLinkedHashMap.Builder<String, CompletableFuture<Void>>()
-                .maximumWeightedCapacity(queueSize)
-                .build();
+        cachedDispatchQueues = new ConcurrentHashMap<>();
+        valueReferenceQueue = new ReferenceQueue<>();
     }
 
     public void stop() {
