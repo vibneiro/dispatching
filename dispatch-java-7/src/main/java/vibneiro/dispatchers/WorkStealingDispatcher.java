@@ -36,7 +36,7 @@ public class WorkStealingDispatcher implements Dispatcher {
     private static final Logger log = LoggerFactory.getLogger(WorkStealingDispatcher.class);
 
     private ListeningExecutorService service;
-    private Striped<Lock> cacheLocks;
+    private Striped<Lock> cacheLock;
     private ConcurrentMap<String, WeakReferenceByValue<ListenableFuture<?>>> cachedDispatchQueues;
     private ReferenceQueue<ListenableFuture<?>> valueReferenceQueue;
 
@@ -45,7 +45,7 @@ public class WorkStealingDispatcher implements Dispatcher {
     private int lockStripeSize = 256;
     private int threadsCount = Runtime.getRuntime().availableProcessors();
 
-    private Lock evictionLock = new ReentrantLock();
+    private final Lock evictionLock = new ReentrantLock();
 
     private volatile boolean started;
     private volatile boolean stopped;
@@ -105,9 +105,10 @@ public class WorkStealingDispatcher implements Dispatcher {
     public void dispatch(String dispatchId, final Runnable task) {
         dispatchAngGetFuture(dispatchId, task);    }
 
-    @GuardedBy("cacheLocks")
+    @GuardedBy("cacheLock")
     public ListenableFuture<?> dispatchAngGetFuture(final String dispatchId, final Runnable task) {
-        Lock lock = cacheLocks.get(dispatchId);
+
+        Lock lock = cacheLock.get(dispatchId);
         lock.lock();
 
         try {
@@ -184,16 +185,16 @@ public class WorkStealingDispatcher implements Dispatcher {
         while ((valueRef = valueReferenceQueue.poll()) != null) { // get GC-ed valueReference
 
             @SuppressWarnings("unchecked")
-            WeakReferenceByValue<ListenableFuture<?>> ref = (WeakReferenceByValue<ListenableFuture<?>>) valueRef;
+            WeakReferenceByValue<ListenableFuture<Void>> ref = (WeakReferenceByValue<ListenableFuture<Void>>) valueRef;
             String dispatchId = (String)ref.getKeyReference();
 
             if (dispatchId != null) {
                 log.debug("Attempting to remove a key {} of a GC-ed value from the cache", dispatchId);
 
-                Lock lock = cacheLocks.get(dispatchId); // do it atomically
+                Lock lock = cacheLock.get(dispatchId); // do it atomically
                 lock.lock();
                 try {
-                    cachedDispatchQueues.keySet().remove(dispatchId);
+                    cachedDispatchQueues.remove(dispatchId, ref); // make sure ref is not changed
                     log.debug("Removed a key {} from the cache", dispatchId);
                 } finally {
                     lock.unlock();
@@ -217,7 +218,7 @@ public class WorkStealingDispatcher implements Dispatcher {
         if (service == null) {
             service = newDefaultForkJoinPool(threadsCount);
         }
-        cacheLocks = Striped.lock(lockStripeSize); // Lock stripe granularity, should be tuned
+        cacheLock = Striped.lock(lockStripeSize); // Lock stripe granularity, should be tuned
         valueReferenceQueue = new ReferenceQueue<>();
         cachedDispatchQueues = new ConcurrentHashMap<>();
     }

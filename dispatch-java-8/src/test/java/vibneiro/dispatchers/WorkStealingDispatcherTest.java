@@ -27,7 +27,7 @@ public class WorkStealingDispatcherTest {
         dispatcher = WorkStealingDispatcher
                 .newBuilder()
                 .setQueueSize(10)
-                        .build();
+                .build();
         dispatcher.start();
     }
 
@@ -42,40 +42,40 @@ public class WorkStealingDispatcherTest {
                 id = idGenerator.nextId();
             }
 
-            dispatcher.dispatch(id, new Runnable() {
-                @Override
-                public void run() {
-                }
+            dispatcher.dispatch(id, () -> {
             });
 
-
             if (i%10 == 0) {
+                log.debug("Gc start");
                 System.gc();
+                log.debug("Gc end");
             }
 
         }
     }
 
-   /*
-    * Tests that order of execution is FIFO
-    * Test invariant: prevValue == curValue - 1
-    */
+    /*
+     * Tests that order of execution is FIFO
+     * Test invariant: prevValue == curValue - 1
+     */
     @Test
     public void testLinearizability() throws Exception {
 
-        final String id = idGenerator.nextId();
+        final String id = idGenerator.nextId(); // single FIFO bucket
         final AtomicInteger prevIndex = new AtomicInteger(-1);
         final AtomicBoolean failed = new AtomicBoolean(false);
 
         for (int i = 0; i < 10000; i++) { //This should be enough with high probability to identify bugs in the sequence
-            dispatcher.dispatch(id, new TestTask(i, new Callback() {
-                @Override
-                public void callback(final int curIndex) {
-                    if (curIndex - 1 != prevIndex.get()) {
-                        failed.set(true);
-                    }
-                    prevIndex.set(curIndex);
+            final int idx = i;
+            dispatcher.dispatch(id, new TestTask(i, curIndex -> {
+
+                System.out.println("idx: " + idx + " curIndex = " + curIndex + " prevIndex = " + prevIndex);
+
+                if (curIndex - 1 != prevIndex.get()) {
+                    failed.set(true);
                 }
+
+                prevIndex.set(curIndex);
             }));
 
             if (failed.get()) {
