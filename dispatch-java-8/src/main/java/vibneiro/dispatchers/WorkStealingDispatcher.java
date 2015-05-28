@@ -1,6 +1,6 @@
 package vibneiro.dispatchers;
 
-import com.google.common.util.concurrent.Striped;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import vibneiro.cache.WeakReferenceByValue;
@@ -38,14 +38,12 @@ public class WorkStealingDispatcher implements Dispatcher {
 
     private ExecutorService service;
 
-    IdGenerator idGenerator = new IdGenerator("ID_", new SystemDateSource());
+    private IdGenerator idGenerator = new IdGenerator("ID_", new SystemDateSource());
     private int queueSize = 1000;
     private int threadsCount = Runtime.getRuntime().availableProcessors();
     private ConcurrentMap<String, WeakReferenceByValue<CompletableFuture<Void>>> cachedDispatchQueues;
     private ReferenceQueue<CompletableFuture<Void>> valueReferenceQueue;
     private final Lock evictionLock = new ReentrantLock();
-    private Striped<Lock> cacheLock;
-    private int lockStripeSize = 256;
 
     private volatile boolean started;
     private volatile boolean stopped;
@@ -106,7 +104,8 @@ public class WorkStealingDispatcher implements Dispatcher {
         long startTime = System.nanoTime();
 
         try {
-            return cachedDispatchQueues.compute(dispatchId, (key, queueReference) -> {  // Atomic by the contract
+            // compute is atomic by the contract
+            return cachedDispatchQueues.compute(dispatchId, (key, queueReference) -> {
 
                 CompletableFuture<Void> value;
 
@@ -116,24 +115,24 @@ public class WorkStealingDispatcher implements Dispatcher {
 
                 if (queueReference == null) { // First time for this dispatchId before eviction
                     log.debug("Start task execution for new dispatchId[{}]: ", dispatchId);
-                    value = CompletableFuture.runAsync(task);
+                    value = CompletableFuture.runAsync(task, service);
                 } else {
                     value = queueReference.get();
                     if (value != null) {
-                        log.debug("Start task execution for existing dispatchId[{}]: ", dispatchId);
-                        value = value.thenRunAsync(task);
+                        log.debug("Start task execution for existing dispatchId[{}] ", dispatchId);
+                        value = value.thenRunAsync(task, service);
                     } else { // The value has been GC-ed, thus WeakReference.get() is null
-                        value = CompletableFuture.runAsync(task);
+                        value = CompletableFuture.runAsync(task, service);
                     }
                 }
 
-                value.thenRun(completed);
+                value.thenRunAsync(completed, service);
                 return new WeakReferenceByValue<>(dispatchId, value, valueReferenceQueue);
                 }
             ).get();
-        } catch(Throwable e) {
-            log.info("{} - ", this, e);
-            throw e;
+        } catch(Throwable t) {
+            log.warn("Exception thrown when calling dispatchAngGetFuture for dispatchId[{}]", dispatchId, t);
+            throw t;
         } finally {
             tryToPruneCache();
         }
@@ -147,8 +146,12 @@ public class WorkStealingDispatcher implements Dispatcher {
     private void tryToPruneCache() {
         if (evictionLock.tryLock()) {
             try {
-                 drainValueReferences();
-            } finally {
+                service.submit(() -> {drainValueReferences();});
+            }
+            catch(Throwable t) {
+                log.warn("Exception thrown when submitting drainValueReferences:task", t);
+            }
+            finally {
                 evictionLock.unlock();
             }
         }
@@ -191,7 +194,6 @@ public class WorkStealingDispatcher implements Dispatcher {
         }
         cachedDispatchQueues = new ConcurrentHashMap<>();
         valueReferenceQueue = new ReferenceQueue<>();
-        cacheLock = Striped.lock(lockStripeSize); // Lock stripe granularity, should be tuned
     }
 
     public void stop() {

@@ -14,21 +14,23 @@ import java.lang.ref.ReferenceQueue;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 
 /**
  * @Author: Ivan Voroshilin
- * @email: vibneiro@gmail.com
+ * @email:  vibneiro@gmail.com
+ * @since java 7
  * Work-Stealing Dispatcher.
- * Compatible with JDK 7 and later.
- * The idea is to treat external submitters in a similar way as workers via disassociation of work queues and workers.
  *
- * Advantage:
+ * Mechanics:
+ * The idea is to treat external submitters in a similar way as workers via disassociation of work queues and workers.
  * By separating the queue from the worker, FIFO semantics are retained per dispatchId and the work is more evenly
  * spread out as follows. When work-tasks differ in execution time, some dispatch queues might be more active than others causing
  * unfair balance among workers. Free threads are able to take on tasks from the main queue.
  *
  * Cache eviction is managed by weakReference values  on reaching a threshold = cache size.
  * In this case, an attempt is made to evict entries having garbage-collected values.
+ *
  */
 @ThreadSafe
 public class WorkStealingDispatcher implements Dispatcher {
@@ -152,9 +154,9 @@ public class WorkStealingDispatcher implements Dispatcher {
             log.debug("{} - task added: {}. Queue size: {}.", task, cachedDispatchQueues.size());
             cachedDispatchQueues.put(dispatchId, new WeakReferenceByValue<>(dispatchId, future, valueReferenceQueue));
             return future;
-        } catch (Throwable e) {
-            log.info("{} - ", this, e);
-            throw e;
+        } catch (Throwable t) {
+            log.warn("Exception thrown when calling dispatchAngGetFuture for dispatchId[{}]", dispatchId, t);
+            throw t;
         } finally {
             lock.unlock();
             tryToPruneCache();
@@ -168,8 +170,18 @@ public class WorkStealingDispatcher implements Dispatcher {
     private void tryToPruneCache() {
         if (evictionLock.tryLock()) {
             try {
-                drainValueReferences();
-            } finally {
+                service.submit(
+                        new Runnable() {
+                               @Override
+                               public void run() {
+                                   drainValueReferences();
+                           }
+                       });
+            }
+            catch(Throwable t) {
+                log.warn("Exception thrown when submitting drainValueReferences:task", t);
+            }
+            finally {
                 evictionLock.unlock();
             }
         }
@@ -184,23 +196,13 @@ public class WorkStealingDispatcher implements Dispatcher {
 
         Reference<? extends ListenableFuture<?>> valueRef;
 
-        while ((valueRef = valueReferenceQueue.poll()) != null) { // get GC-ed valueReference
+        while ((valueRef = valueReferenceQueue.poll()) != null) { // get Reference of GC-ed value
 
             @SuppressWarnings("unchecked")
             WeakReferenceByValue<ListenableFuture<Void>> ref = (WeakReferenceByValue<ListenableFuture<Void>>) valueRef;
             String dispatchId = (String)ref.getKeyReference();
-
-            log.debug("Attempting to remove a key {} of a GC-ed value from the cache", dispatchId);
-
-            //TODO Check if the lock is needed here
-            Lock lock = cacheLock.get(dispatchId); // do it atomically
-            lock.lock();
-            try {
-                cachedDispatchQueues.remove(dispatchId, ref); // make sure ref is not changed
-                log.debug("Removed a key {} from the cache", dispatchId);
-            } finally {
-                lock.unlock();
-            }
+            cachedDispatchQueues.remove(dispatchId, ref); // make sure ref is not changed
+            log.debug("Removed a key {} from the cache", dispatchId);
         }
     }
 
