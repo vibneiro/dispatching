@@ -18,11 +18,11 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * @Author: Ivan Voroshilin
  * @email:  vibneiro@gmail.com
+ * @since java 8
  * Work-Stealing Dispatcher.
- * Compatible with JDK 8 and later.
- * The idea is to treat external submitters in a similar way as workers via disassociation of work queues and workers.
  *
- * Advantage:
+ * Mechanics:
+ * The idea is to treat external submitters in a similar way as workers via disassociation of work queues and workers.
  * By separating the queue from the worker, FIFO semantics are retained per dispatchId and the work is more evenly
  * spread out as follows. When work-tasks differ in execution time, some dispatch queues might be more active than others causing
  * unfair balance among workers. Free threads are able to take on tasks from the main queue.
@@ -101,16 +101,12 @@ public class WorkStealingDispatcher implements Dispatcher {
         dispatchAngGetFuture(dispatchId, task);
     }
 
-    @GuardedBy("cacheLock")
     public CompletableFuture<Void> dispatchAngGetFuture(String dispatchId, Runnable task) {
 
         long startTime = System.nanoTime();
 
-        Lock lock = cacheLock.get(dispatchId);
-        lock.lock();
-
         try {
-            return cachedDispatchQueues.compute(dispatchId, (key, queueReference) -> {
+            return cachedDispatchQueues.compute(dispatchId, (key, queueReference) -> {  // Atomic by the contract
 
                 CompletableFuture<Void> value;
 
@@ -120,28 +116,28 @@ public class WorkStealingDispatcher implements Dispatcher {
 
                 if (queueReference == null) { // First time for this dispatchId before eviction
                     log.debug("Start task execution for new dispatchId[{}]: ", dispatchId);
-                    queueReference = new WeakReferenceByValue<>(dispatchId, value = CompletableFuture.runAsync(task), valueReferenceQueue);
+                    value = CompletableFuture.runAsync(task);
                 } else {
                     value = queueReference.get();
                     if (value != null) {
                         log.debug("Start task execution for existing dispatchId[{}]: ", dispatchId);
-                        value.thenRun(task);
+                        value = value.thenRunAsync(task);
                     } else { // The value has been GC-ed, thus WeakReference.get() is null
-                        queueReference = new WeakReferenceByValue<>(dispatchId, value = CompletableFuture.runAsync(task), valueReferenceQueue);
+                        value = CompletableFuture.runAsync(task);
                     }
                 }
 
                 value.thenRun(completed);
-                return queueReference;
+                return new WeakReferenceByValue<>(dispatchId, value, valueReferenceQueue);
                 }
             ).get();
         } catch(Throwable e) {
             log.info("{} - ", this, e);
             throw e;
         } finally {
-            lock.unlock();
             tryToPruneCache();
         }
+
     }
 
     private boolean shouldPruneCache() {
@@ -151,7 +147,7 @@ public class WorkStealingDispatcher implements Dispatcher {
     private void tryToPruneCache() {
         if (evictionLock.tryLock()) {
             try {
-                drainValueReferences();
+                 drainValueReferences();
             } finally {
                 evictionLock.unlock();
             }
@@ -173,16 +169,8 @@ public class WorkStealingDispatcher implements Dispatcher {
             WeakReferenceByValue<CompletableFuture<Void>> ref = (WeakReferenceByValue<CompletableFuture<Void>>) valueRef;
             String dispatchId = (String)ref.getKeyReference();
 
-            if (dispatchId != null) {
-                Lock lock = cacheLock.get(dispatchId);
-                lock.lock();
-                try {
-                    cachedDispatchQueues.remove(dispatchId, ref);
-                    log.debug("[Cache eviction] Removed dispatchId [{}] from the cache", dispatchId);
-                } finally {
-                    lock.unlock();
-                }
-            }
+            cachedDispatchQueues.remove(dispatchId, ref);
+            log.debug("[Cache eviction] Removed dispatchId [{}] from the cache", dispatchId);
         }
     }
 

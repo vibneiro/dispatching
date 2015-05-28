@@ -147,6 +147,8 @@ public class WorkStealingDispatcher implements Dispatcher {
                 }, service);
                 future = next;
             }
+
+
             log.debug("{} - task added: {}. Queue size: {}.", task, cachedDispatchQueues.size());
             cachedDispatchQueues.put(dispatchId, new WeakReferenceByValue<>(dispatchId, future, valueReferenceQueue));
             return future;
@@ -188,17 +190,16 @@ public class WorkStealingDispatcher implements Dispatcher {
             WeakReferenceByValue<ListenableFuture<Void>> ref = (WeakReferenceByValue<ListenableFuture<Void>>) valueRef;
             String dispatchId = (String)ref.getKeyReference();
 
-            if (dispatchId != null) {
-                log.debug("Attempting to remove a key {} of a GC-ed value from the cache", dispatchId);
+            log.debug("Attempting to remove a key {} of a GC-ed value from the cache", dispatchId);
 
-                Lock lock = cacheLock.get(dispatchId); // do it atomically
-                lock.lock();
-                try {
-                    cachedDispatchQueues.remove(dispatchId, ref); // make sure ref is not changed
-                    log.debug("Removed a key {} from the cache", dispatchId);
-                } finally {
-                    lock.unlock();
-                }
+            //TODO Check if the lock is needed here
+            Lock lock = cacheLock.get(dispatchId); // do it atomically
+            lock.lock();
+            try {
+                cachedDispatchQueues.remove(dispatchId, ref); // make sure ref is not changed
+                log.debug("Removed a key {} from the cache", dispatchId);
+            } finally {
+                lock.unlock();
             }
         }
     }

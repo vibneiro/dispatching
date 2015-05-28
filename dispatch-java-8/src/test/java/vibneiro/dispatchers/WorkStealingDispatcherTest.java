@@ -12,6 +12,8 @@ import vibneiro.idgenerators.time.SystemDateSource;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.fail;
+
 public class WorkStealingDispatcherTest {
 
     private WorkStealingDispatcher dispatcher;
@@ -54,36 +56,31 @@ public class WorkStealingDispatcherTest {
         }
     }
 
+
     /*
      * Tests that order of execution is FIFO
      * Test invariant: prevValue == curValue - 1
+     * Should run in < 30secs on modern commodity machines
      */
     @Test
     public void testLinearizability() throws Exception {
 
-        final String id = idGenerator.nextId(); // single FIFO bucket
-        final AtomicInteger prevIndex = new AtomicInteger(-1);
-        final AtomicBoolean failed = new AtomicBoolean(false);
+        final AtomicInteger curIdx = new AtomicInteger(0);
+        final AtomicInteger prevIdx = new AtomicInteger(-1);
 
-        for (int i = 0; i < 10000; i++) { //This should be enough with high probability to identify bugs in the sequence
-            final int idx = i;
-            dispatcher.dispatch(id, new TestTask(i, curIndex -> {
+        for (int i = 0; i < 10000000; i++) { //This should be enough with high probability to identify bugs in the sequence
+            final int taskNo = i;
+            dispatcher.dispatch("id", new TestTask(taskNo, curIndex -> {
 
-                System.out.println("idx: " + idx + " curIndex = " + curIndex + " prevIndex = " + prevIndex);
-
-                if (curIndex - 1 != prevIndex.get()) {
-                    failed.set(true);
+                if(prevIdx.getAndIncrement() != taskNo) {
+                    fail("FIFO is broken");
                 }
 
-                prevIndex.set(curIndex);
+                if (curIdx.getAndIncrement() != prevIdx.get() ) {
+                    fail("FIFO is broken");
+                }
             }));
-
-            if (failed.get()) {
-                break;
-            }
         }
-
-        Assert.assertTrue(!failed.get());
     }
 
     private interface Callback {
