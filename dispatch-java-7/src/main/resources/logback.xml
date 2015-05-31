@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding='UTF-8' ?>
+<configuration debug="true">
+
+    <appender name="STD_OUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <immediateFlush>true</immediateFlush>
+            <pattern>%date %-5level [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="error">
+        <appender-ref ref="STD_OUT"/>
+    </root>
+</configuration>

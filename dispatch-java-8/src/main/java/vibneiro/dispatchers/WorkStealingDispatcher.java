@@ -39,6 +39,7 @@ public class WorkStealingDispatcher implements Dispatcher {
     private ExecutorService service;
 
     private IdGenerator idGenerator = new IdGenerator("ID_", new SystemDateSource());
+    private boolean noCacheEviction = false;
     private int queueSize = 1000;
     private int threadsCount = Runtime.getRuntime().availableProcessors();
     private ConcurrentMap<String, WeakReferenceByValue<CompletableFuture<Void>>> cachedDispatchQueues;
@@ -77,6 +78,11 @@ public class WorkStealingDispatcher implements Dispatcher {
 
         public Builder setExecutorService(ExecutorService service) {
             WorkStealingDispatcher.this.service = service;
+            return this;
+        }
+
+        public Builder unBoundedCache(boolean noCacheEviction) {
+            WorkStealingDispatcher.this.noCacheEviction = noCacheEviction;
             return this;
         }
 
@@ -126,7 +132,10 @@ public class WorkStealingDispatcher implements Dispatcher {
                     }
                 }
 
-                value.thenRunAsync(completed, service);
+               if (log.isDebugEnabled()) {
+                   value.thenRunAsync(completed, service);
+               }
+
                 return new WeakReferenceByValue<>(dispatchId, value, valueReferenceQueue);
                 }
             ).get();
@@ -140,7 +149,7 @@ public class WorkStealingDispatcher implements Dispatcher {
     }
 
     private boolean shouldPruneCache() {
-        return cachedDispatchQueues.size() > queueSize;
+        return (!noCacheEviction) && cachedDispatchQueues.size() > queueSize;
     }
 
     private void tryToPruneCache() {

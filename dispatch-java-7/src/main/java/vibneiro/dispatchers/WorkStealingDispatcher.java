@@ -43,6 +43,7 @@ public class WorkStealingDispatcher implements Dispatcher {
     private ReferenceQueue<ListenableFuture<?>> valueReferenceQueue;
 
     private IdGenerator idGenerator = new IdGenerator("ID_", new SystemDateSource());
+    private boolean noCacheEviction = false;
     private int queueSize = 1024;
     private int lockStripeSize = 256;
     private int threadsCount = Runtime.getRuntime().availableProcessors();
@@ -86,6 +87,11 @@ public class WorkStealingDispatcher implements Dispatcher {
 
         public Builder setExecutorService(ExecutorService service) {
             WorkStealingDispatcher.this.service = MoreExecutors.listeningDecorator(service);
+            return this;
+        }
+
+        public Builder unBoundedCache() {
+            WorkStealingDispatcher.this.noCacheEviction = true;
             return this;
         }
 
@@ -164,7 +170,7 @@ public class WorkStealingDispatcher implements Dispatcher {
     }
 
     private boolean shouldPruneCache() {
-        return cachedDispatchQueues.size() > queueSize;
+        return (!noCacheEviction) && cachedDispatchQueues.size() > queueSize;
     }
 
     private void tryToPruneCache() {

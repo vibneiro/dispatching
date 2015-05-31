@@ -10,6 +10,8 @@
     <modules>
         <module>dispatch-java-7</module>
         <module>dispatch-java-8</module>
+        <module>benchmarks</module>
+
     </modules>
     <packaging>pom</packaging>
     <name>dispatch</name>
@@ -23,7 +25,6 @@
     </properties>
 
     <dependencies>
-
         <!-- logging -->
         <dependency>
             <groupId>ch.qos.logback</groupId>

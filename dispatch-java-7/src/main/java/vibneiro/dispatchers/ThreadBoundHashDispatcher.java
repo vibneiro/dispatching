@@ -90,6 +90,7 @@ public class ThreadBoundHashDispatcher implements Dispatcher, ThreadCompletedLis
         dispatch(dispatchIdGenerator.nextId(), task);
     }
 
+    //TODO @Ivan Add on taskComplete listeners, needed for benchmarking
     @Override
     public void dispatch(String dispatchId, Runnable task) {
         try {
