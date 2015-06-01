@@ -107,45 +107,33 @@ public class WorkStealingDispatcher implements Dispatcher {
 
     public CompletableFuture<Void> dispatchAngGetFuture(String dispatchId, Runnable task) {
 
-        long startTime = System.nanoTime();
-
         try {
+            @SuppressWarnings("unchecked")
+            CompletableFuture[] value = new CompletableFuture[1]; // magic with a strong ref
+
             // compute is atomic by the contract
-            return cachedDispatchQueues.compute(dispatchId, (key, queueReference) -> {
-
-                CompletableFuture<Void> value;
-
-                Runnable completed = () -> {
-                    log.debug("Completed task execution for dispatchId[{}]: time[{}]ms", dispatchId, (System.nanoTime() - startTime) / 1_000_000);
-                };
+            cachedDispatchQueues.compute(dispatchId, (key, queueReference) -> {
 
                 if (queueReference == null) { // First time for this dispatchId before eviction
-                    log.debug("Start task execution for new dispatchId[{}]: ", dispatchId);
-                    value = CompletableFuture.runAsync(task, service);
+                    value[0] = CompletableFuture.runAsync(task, service);
                 } else {
-                    value = queueReference.get();
-                    if (value != null) {
-                        log.debug("Start task execution for existing dispatchId[{}] ", dispatchId);
-                        value = value.thenRunAsync(task, service);
+                    value[0] = queueReference.get();
+                    if (value[0] != null) {
+                        value[0] = value[0].thenRunAsync(task, service);
                     } else { // The value has been GC-ed, thus WeakReference.get() is null
-                        value = CompletableFuture.runAsync(task, service);
+                        value[0] = CompletableFuture.runAsync(task, service);
                     }
                 }
+                return new WeakReferenceByValue<>(dispatchId, value[0], valueReferenceQueue);
+            });
 
-               if (log.isDebugEnabled()) {
-                   value.thenRunAsync(completed, service);
-               }
-
-                return new WeakReferenceByValue<>(dispatchId, value, valueReferenceQueue);
-                }
-            ).get();
+            return value[0];
         } catch(Throwable t) {
             log.warn("Exception thrown when calling dispatchAngGetFuture for dispatchId[{}]", dispatchId, t);
             throw t;
         } finally {
             tryToPruneCache();
         }
-
     }
 
     private boolean shouldPruneCache() {
@@ -155,7 +143,7 @@ public class WorkStealingDispatcher implements Dispatcher {
     private void tryToPruneCache() {
         if (evictionLock.tryLock()) {
             try {
-                service.submit(() -> {drainValueReferences();});
+                service.submit(this::drainValueReferences);
             }
             catch(Throwable t) {
                 log.warn("Exception thrown when submitting drainValueReferences:task", t);

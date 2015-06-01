@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import vibneiro.idgenerators.IdGenerator;
 import vibneiro.idgenerators.time.SystemDateSource;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.fail;
@@ -31,8 +32,7 @@ public class WorkStealingDispatcherTest {
     }
 
     @Test
-    public void testCacheEviction() {
-
+    public void testCacheEviction() throws ExecutionException, InterruptedException {
         String id = idGenerator.nextId();
 
         for (int i = 0; i < 10000; i++) {

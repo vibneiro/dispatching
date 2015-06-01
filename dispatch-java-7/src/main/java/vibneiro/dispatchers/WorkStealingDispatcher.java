@@ -128,16 +128,7 @@ public class WorkStealingDispatcher implements Dispatcher {
             }
 
             if (future == null) {
-                final long startTime = System.currentTimeMillis();
-                log.debug("Start task execution for new dispatchId[{}]: ",  dispatchId);
                 future = service.submit(task);
-                future.addListener(new Runnable() {
-                    @Override
-                    public void run() {
-                        log.debug("Completed task execution for new dispatchId[{}]: time[{}]ms",  dispatchId, (System.currentTimeMillis() - startTime));
-
-                    }
-                }, service);
             } else {
                 final SettableFuture<Void> next = SettableFuture.create();
                 //Adding Linked task with the same dispatchId
@@ -145,9 +136,7 @@ public class WorkStealingDispatcher implements Dispatcher {
                     @Override
                     public void run() {
                         try {
-                            log.debug("Start task execution for existing dispatchId[{}]: {}",  dispatchId, task);
                             task.run();
-                            log.debug("Completed task execution for existing dispatchId[{}]: {}",  dispatchId, task);
                         } finally {
                             next.set(null);
                         }
@@ -156,8 +145,6 @@ public class WorkStealingDispatcher implements Dispatcher {
                 future = next;
             }
 
-
-            log.debug("{} - task added: {}. Queue size: {}.", task, cachedDispatchQueues.size());
             cachedDispatchQueues.put(dispatchId, new WeakReferenceByValue<>(dispatchId, future, valueReferenceQueue));
             return future;
         } catch (Throwable t) {

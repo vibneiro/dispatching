@@ -1,13 +1,12 @@
 package vibneiro;
 
 import org.openjdk.jmh.annotations.*;
-import sun.reflect.generics.scope.Scope;
 import vibneiro.dispatchers.WorkStealingDispatcher;
 import vibneiro.idgenerators.IdGenerator;
 import vibneiro.idgenerators.time.SystemDateSource;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
 /*
 
@@ -45,6 +44,35 @@ DispatchBenchmark.dispatchWorkStealingUniqueId  WorkStealingDispatcher  thrpt  2
  ..
 3. threadpoolexecutor
 
+Java 7:
+Result "dispatchWorkStealingUniqueId":
+  274517,171 ±(99.9%) 17193,055 ops/s [Average]
+  (min, avg, max) = (120355,710, 274517,171, 365012,185), stdev = 72796,472
+  CI (99.9%): [257324,116, 291710,226] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:13:53
+
+Benchmark                                               (dispatchType)   Mode  Cnt       Score       Error  Units
+DispatchBenchmark.dispatchWorkStealingSameKey   WorkStealingDispatcher  thrpt  200  349305,800 ±  8438,639  ops/s
+DispatchBenchmark.dispatchWorkStealingUniqueId  WorkStealingDispatcher  thrpt  200  274517,171 ± 17193,055  ops/s
+
+Java 8:
+
+Result "dispatchWorkStealingUniqueId":
+  259229,143 ±(99.9%) 18891,257 ops/s [Average]
+  (min, avg, max) = (93972,800, 259229,143, 373439,107), stdev = 79986,765
+  CI (99.9%): [240337,886, 278120,400] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:13:56
+
+Benchmark                                               (dispatchType)   Mode  Cnt       Score       Error  Units
+DispatchBenchmark.dispatchWorkStealingSameKey   WorkStealingDispatcher  thrpt  200  292802,577 ±  6080,728  ops/s
+DispatchBenchmark.dispatchWorkStealingUniqueId  WorkStealingDispatcher  thrpt  200  259229,143 ± 18891,257  ops/s
+
+
+4. caffeine
 
 */
 
@@ -77,25 +105,29 @@ public class DispatchBenchmark {
         }
     }
 
+    @TearDown()
+    public void end() {
+        wsDispatcher.stop();
+    }
+
     private void setupWorkStealingDispatcher() {
         wsDispatcher = WorkStealingDispatcher
                 .newBuilder()
                 .setIdGenerator(new IdGenerator("ID_", new SystemDateSource()))
-                .unBoundedCache(true).
+                .setExecutorService(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())).
                         build();
         wsDispatcher.start();
     }
 
     @Benchmark @Threads(32)
     public void dispatchWorkStealingSameKey() throws ExecutionException, InterruptedException {
-        CompletableFuture<Void> future = wsDispatcher.dispatchAngGetFuture(id, task);
-        if(future != null) { future.get(); }
+        wsDispatcher.dispatchAngGetFuture(id, task).get();
+
     }
 
     @Benchmark @Threads(32)
     public void dispatchWorkStealingUniqueId() throws ExecutionException, InterruptedException {
-        CompletableFuture<Void> future = wsDispatcher.dispatchAngGetFuture(task);
-        if(future != null) { future.get(); }
+        wsDispatcher.dispatchAngGetFuture(task).get();
     }
 
 }
