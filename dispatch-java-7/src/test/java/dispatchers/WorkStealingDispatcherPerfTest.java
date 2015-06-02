@@ -2,10 +2,7 @@ package dispatchers;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import vibneiro.dispatchers.WorkStealingDispatcher;
 import vibneiro.idgenerators.IdGenerator;
@@ -31,6 +28,12 @@ public class WorkStealingDispatcherPerfTest {
                         build();
         dispatcher.start();
     }
+
+    @After
+    public void tearDown() {
+        dispatcher.stop();
+    }
+
 
     @Test
     public void testQueueingFairness() throws Exception {
@@ -62,10 +65,10 @@ public class WorkStealingDispatcherPerfTest {
         // 4 tasks with different load fractions ~ 1/1/4/4.5 combined in a blocking statement:
         Futures.successfulAsList(
                 Lists.newArrayList(
-                        dispatcher.dispatchAngGetFuture(new FibonacciTask(10)),
-                        dispatcher.dispatchAngGetFuture(new FibonacciTask(10)),
-                        dispatcher.dispatchAngGetFuture(new FibonacciTask(40)),
-                        dispatcher.dispatchAngGetFuture(new FibonacciTask(45))
+                        dispatcher.dispatchAsync(new FibonacciTask(10)),
+                        dispatcher.dispatchAsync(new FibonacciTask(10)),
+                        dispatcher.dispatchAsync(new FibonacciTask(40)),
+                        dispatcher.dispatchAsync(new FibonacciTask(45))
                 )).get();
 
     }

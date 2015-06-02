@@ -19,7 +19,7 @@ import java.util.logging.Level;
 /**
  * @Author: Ivan Voroshilin
  * @email:  vibneiro@gmail.com
- * @since java 7
+ * @since 1.7
  * Work-Stealing Dispatcher.
  *
  * Mechanics:
@@ -101,20 +101,13 @@ public class WorkStealingDispatcher implements Dispatcher {
     }
 
     @Override
-    public void dispatch(Runnable task) {
-        dispatch(idGenerator.nextId(), task);
-    }
-
-    public ListenableFuture<?> dispatchAngGetFuture(Runnable task) {
-        return dispatchAngGetFuture(idGenerator.nextId(), task);
+    public ListenableFuture<?> dispatchAsync(Runnable task) {
+        return dispatchAsync(idGenerator.nextId(), task);
     }
 
     @Override
-    public void dispatch(String dispatchId, final Runnable task) {
-        dispatchAngGetFuture(dispatchId, task);    }
-
     @GuardedBy("cacheLock")
-    public ListenableFuture<?> dispatchAngGetFuture(final String dispatchId, final Runnable task) {
+    public ListenableFuture<?> dispatchAsync(final String dispatchId, final Runnable task) {
 
         Lock lock = cacheLock.get(dispatchId);
         lock.lock();

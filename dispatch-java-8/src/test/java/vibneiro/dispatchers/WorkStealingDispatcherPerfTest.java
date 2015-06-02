@@ -1,9 +1,6 @@
 package vibneiro.dispatchers;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 import vibneiro.idgenerators.IdGenerator;
 import vibneiro.idgenerators.time.SystemDateSource;
 
@@ -26,6 +23,12 @@ public class WorkStealingDispatcherPerfTest {
                         build();
         dispatcher.start();
     }
+
+    @After
+    public void tearDown() {
+        dispatcher.stop();
+    }
+
 
     @Test
     public void testQueueingFairness() throws Exception {

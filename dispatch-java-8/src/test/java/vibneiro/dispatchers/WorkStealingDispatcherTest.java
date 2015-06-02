@@ -1,5 +1,6 @@
 package vibneiro.dispatchers;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -29,6 +30,11 @@ public class WorkStealingDispatcherTest {
                 .setQueueSize(10)
                 .build();
         dispatcher.start();
+    }
+
+    @After
+    public void tearDown() {
+        dispatcher.stop();
     }
 
     @Test

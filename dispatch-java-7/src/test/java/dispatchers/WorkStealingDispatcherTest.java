@@ -1,5 +1,6 @@
 package dispatchers;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,6 +34,11 @@ public class WorkStealingDispatcherTest {
         dispatcher.start();
     }
 
+    @After
+    public void tearDown() throws Exception {
+        dispatcher.stop();
+    }
+
     @Test
     public void testCacheEviction() {
 
@@ -44,7 +50,7 @@ public class WorkStealingDispatcherTest {
                 id = idGenerator.nextId();
             }
 
-            dispatcher.dispatch(id, new Runnable() {
+            dispatcher.dispatchAsync(id, new Runnable() {
                 @Override
                 public void run() {
                 }
@@ -71,17 +77,17 @@ public class WorkStealingDispatcherTest {
 
        for (int i = 0; i < 10000000; i++) { //This should be enough with high probability to identify bugs in the sequence
            final int taskNo = i;
-           dispatcher.dispatch("id", new TestTask(taskNo, new Callback() {
+           dispatcher.dispatchAsync("id", new TestTask(taskNo, new Callback() {
 
                @Override
                public void callback(int curIndex) {
 
-                   if(prevIdx.incrementAndGet() != taskNo) {
+                   if (prevIdx.incrementAndGet() != taskNo) {
                        //fail("FIFO is broken");
                        System.out.println("FIFO is broken: taskNo = " + taskNo + " prevIdx = " + prevIdx);
                    }
 
-                   if (curIdx.getAndIncrement() != prevIdx.get() ) {
+                   if (curIdx.getAndIncrement() != prevIdx.get()) {
                        //fail("FIFO is broken");
                        System.out.println("FIFO is broken: curIdx = " + curIdx + " prevIdx = " + prevIdx);
                    }
