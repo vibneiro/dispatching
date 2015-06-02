@@ -10,7 +10,7 @@
     <modules>
         <module>dispatch-java-7</module>
         <module>dispatch-java-8</module>
-        <module>benchmarks</module>
+        <module>benchmarks-java-8</module>
 
     </modules>
     <packaging>pom</packaging>

@@ -20,7 +20,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jmh.version>1.9.3</jmh.version>
         <javac.target>1.6</javac.target>
-        <uberjar.name>benchmarks</uberjar.name>
+        <uberjar.name>benchmarks-java-8</uberjar.name>
     </properties>
 
     <dependencies>

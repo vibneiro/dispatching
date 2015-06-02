@@ -10,6 +10,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/*
+ 1. mvn clean install
+ 2. java -jar target/benchmarks-java-8.jar CaffeinedDispatcherBenchmark -p cacheType=""Bounded","Unbounded"
+*/
+
 @State(Scope.Benchmark)
 public class CaffeinedDispatcherBenchmark {
 
