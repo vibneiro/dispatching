@@ -5,6 +5,7 @@ import vibneiro.dispatchers.CaffeineCachedDispatcher;
 import vibneiro.idgenerators.IdGenerator;
 import vibneiro.idgenerators.time.SystemDateSource;
 
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,10 +13,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 @State(Scope.Benchmark)
 public class CaffeinedDispatcherBenchmark {
 
+    static final int SIZE = (2 << 14);
+    static final int MASK = SIZE - 1;
+
     AtomicInteger intId;
     CaffeineCachedDispatcher dispatcher;
     Runnable task;
     String id;
+
+    @Param({"Bounded", "Unbounded" })
+    String cacheType;
+
+    String[] rndIds;
+
+    @State(Scope.Thread)
+    public static class ThreadState {
+        static final Random random = new Random();
+        int index = random.nextInt();
+    }
 
     @Setup
     public void setup() {
@@ -29,13 +44,24 @@ public class CaffeinedDispatcherBenchmark {
 
         id = "ID";
 
-        dispatcher = CaffeineCachedDispatcher
+        CaffeineCachedDispatcher.Builder builder = CaffeineCachedDispatcher
                 .newBuilder()
                 .setIdGenerator(new IdGenerator("ID_", new SystemDateSource()))
-                .setExecutorService(Executors.newWorkStealingPool())
-                .build();
+                .setExecutorService(Executors.newWorkStealingPool());
+
+        if(cacheType.equals("Bounded")) {
+            builder.setQueueSize(10);
+        }
+
+        dispatcher = builder.build();
         dispatcher.start();
 
+        rndIds = new String[SIZE];
+        Random random = new Random();
+
+        for (int i = 0; i < SIZE; i++) {
+            rndIds[i] = String.valueOf(random.nextInt());
+        }
     }
 
     @TearDown()
@@ -46,18 +72,17 @@ public class CaffeinedDispatcherBenchmark {
 
     @Benchmark @Threads(32)
     public void dispatchWorkStealingSameKey() throws ExecutionException, InterruptedException {
-        dispatcher.dispatchAngGetFuture(id, task).get();
+        dispatcher.dispatchAsync(id, task).get();
     }
 
     @Benchmark @Threads(32)
     public void dispatchWorkStealingUniqueId() throws ExecutionException, InterruptedException {
-        dispatcher.dispatchAngGetFuture(task).get();
+        dispatcher.dispatchAsync(task).get();
     }
 
     @Benchmark @Threads(32)
-    public void dispatchWorkStealing10Keys() throws ExecutionException, InterruptedException {
-        dispatcher.dispatchAngGetFuture(String.valueOf(intId.incrementAndGet()), task).get();
+    public void dispatchWorkStealingRandomly(ThreadState threadState) throws ExecutionException, InterruptedException {
+        dispatcher.dispatchAsync(rndIds[threadState.index++ & MASK], task).get();
     }
-
 
 }

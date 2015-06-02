@@ -1,6 +1,7 @@
 package vibneiro.dispatchers;
 
 import javax.annotation.concurrent.ThreadSafe;
+import java.util.concurrent.CompletableFuture;
 
 @ThreadSafe
 public interface Dispatcher {
@@ -10,13 +11,13 @@ public interface Dispatcher {
     void stop();
 
     /**
-     * Dispatches task by internally generating next unique dispatchId.
+     * Dispatches task asynchronously by internally generating next unique dispatchId.
      */
-    void dispatch(Runnable task);
+    CompletableFuture<Void> dispatchAsync(Runnable task);
 
     /**
-     * Dispatches task with specified dispatchId
+     * Dispatches task asynchronously with a specified dispatchId
      */
-    void dispatch(String dispatchId, Runnable task);
+    CompletableFuture<Void> dispatchAsync(String dispatchId, Runnable task);
 
 }

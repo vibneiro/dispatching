@@ -9,6 +9,13 @@ import vibneiro.idgenerators.time.SystemDateSource;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.concurrent.*;
 
+/**
+ * @Author: Ivan Voroshilin
+ * @email:  vibneiro@gmail.com
+ * @since 1.8
+ * CaffeineCachedDispatcher
+ *
+ */
 @ThreadSafe
 public class CaffeineCachedDispatcher implements Dispatcher {
 
@@ -62,20 +69,13 @@ public class CaffeineCachedDispatcher implements Dispatcher {
         }
 
         @Override
-        public void dispatch(Runnable task) {
-            dispatch(idGenerator.nextId(), task);
-        }
-
-        public CompletableFuture<Void> dispatchAngGetFuture(Runnable task) {
-            return dispatchAngGetFuture(idGenerator.nextId(), task);
+        public CompletableFuture<Void> dispatchAsync(Runnable task) {
+            return dispatchAsync(idGenerator.nextId(), task);
         }
 
         @Override
-        public void dispatch(String dispatchId, final Runnable task) {
-            dispatchAngGetFuture(dispatchId, task);
-        }
-
-        public CompletableFuture<Void> dispatchAngGetFuture(String dispatchId, Runnable task) {
+        @SuppressWarnings("unchecked")
+        public CompletableFuture<Void> dispatchAsync(String dispatchId, Runnable task) {
 
             try {
                 return (CompletableFuture<Void>) cachedDispatchQueues.compute(dispatchId, (k, queue) -> {

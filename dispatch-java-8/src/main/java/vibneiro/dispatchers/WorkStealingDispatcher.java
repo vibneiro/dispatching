@@ -1,6 +1,5 @@
 package vibneiro.dispatchers;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import vibneiro.cache.WeakReferenceByValue;
@@ -18,7 +17,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * @Author: Ivan Voroshilin
  * @email:  vibneiro@gmail.com
- * @since java 8
+ * @since 1.8
  * Work-Stealing Dispatcher.
  *
  * Mechanics:
@@ -39,7 +38,7 @@ public class WorkStealingDispatcher implements Dispatcher {
     private ExecutorService service;
 
     private IdGenerator idGenerator = new IdGenerator("ID_", new SystemDateSource());
-    private boolean noCacheEviction = false;
+    private boolean unBoundedCache = false;
     private int queueSize = 1000;
     private int threadsCount = Runtime.getRuntime().availableProcessors();
     private ConcurrentMap<String, WeakReferenceByValue<CompletableFuture<Void>>> cachedDispatchQueues;
@@ -81,8 +80,8 @@ public class WorkStealingDispatcher implements Dispatcher {
             return this;
         }
 
-        public Builder unBoundedCache(boolean noCacheEviction) {
-            WorkStealingDispatcher.this.noCacheEviction = noCacheEviction;
+        public Builder unBoundedCache() {
+            WorkStealingDispatcher.this.unBoundedCache = unBoundedCache;
             return this;
         }
 
@@ -92,20 +91,12 @@ public class WorkStealingDispatcher implements Dispatcher {
     }
 
     @Override
-    public void dispatch(Runnable task) {
-        dispatch(idGenerator.nextId(), task);
-    }
-
-    public CompletableFuture<Void> dispatchAngGetFuture(Runnable task) {
-        return dispatchAngGetFuture(idGenerator.nextId(), task);
+    public CompletableFuture<Void> dispatchAsync(Runnable task) {
+        return dispatchAsync(idGenerator.nextId(), task);
     }
 
     @Override
-    public void dispatch(String dispatchId, final Runnable task) {
-        dispatchAngGetFuture(dispatchId, task);
-    }
-
-    public CompletableFuture<Void> dispatchAngGetFuture(String dispatchId, Runnable task) {
+    public CompletableFuture<Void> dispatchAsync(String dispatchId, Runnable task) {
 
         try {
             @SuppressWarnings("unchecked")
@@ -137,7 +128,7 @@ public class WorkStealingDispatcher implements Dispatcher {
     }
 
     private boolean shouldPruneCache() {
-        return (!noCacheEviction) && cachedDispatchQueues.size() > queueSize;
+        return (!unBoundedCache) && cachedDispatchQueues.size() > queueSize;
     }
 
     private void tryToPruneCache() {

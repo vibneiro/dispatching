@@ -22,10 +22,7 @@ public class ThreadBoundHashDispatcherTest {
 
     @Test
     public void testAllTasksWithHashDispatcher() throws InterruptedException {
-        ThreadFactory factory = new CountingThreadFactory(false);
-        IdGenerator generator = new IdGenerator("id", new SystemDateSource());
-
-        ThreadBoundHashDispatcher d = new ThreadBoundHashDispatcher(factory, generator);
+        ThreadBoundHashDispatcher d = ThreadBoundHashDispatcher.newBuilder().build();
         d.start();
         testAllTasks(d);
         d.stop();
@@ -41,7 +38,7 @@ public class ThreadBoundHashDispatcherTest {
                 @Override
                 public void run() {
                     for (int j = 0; j < TASKS_PER_THREAD; j++) {
-                        d.dispatch(() -> {
+                        d.dispatchAsync(() -> {
                             counter.incrementAndGet();
                             tasksLatch.countDown();
                         });

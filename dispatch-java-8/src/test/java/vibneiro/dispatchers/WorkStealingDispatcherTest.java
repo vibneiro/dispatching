@@ -41,7 +41,7 @@ public class WorkStealingDispatcherTest {
                 id = idGenerator.nextId();
             }
 
-            dispatcher.dispatch(id, () -> {
+            dispatcher.dispatchAsync(id, () -> {
             });
 
             if (i%10 == 0) {
@@ -67,7 +67,7 @@ public class WorkStealingDispatcherTest {
 
         for (int i = 0; i < 10000000; i++) { //This should be enough with high probability to identify bugs in the sequence
             final int taskNo = i;
-            dispatcher.dispatch("id", new TestTask(taskNo, curIndex -> {
+            dispatcher.dispatchAsync("id", new TestTask(taskNo, curIndex -> {
 
                 if(prevIdx.incrementAndGet() != taskNo) {
                     System.out.println("FIFO is broken: taskNo = " + taskNo + " prevIdx = " + prevIdx);

@@ -16,12 +16,9 @@ public class WorkStealingDispatcherPerfTest {
 
 
     private WorkStealingDispatcher dispatcher;
-    private IdGenerator idGenerator;
 
     @Before
     public void setUp() throws Exception {
-
-        idGenerator = new IdGenerator("ID_", new SystemDateSource());
 
         dispatcher = WorkStealingDispatcher
                 .newBuilder()
@@ -59,10 +56,10 @@ public class WorkStealingDispatcherPerfTest {
 
         // 4 tasks with different load fractions ~ 1/1/4/4.5 combined in a blocking statement:
         CompletableFuture.allOf(
-                        dispatcher.dispatchAngGetFuture("1", new FibonacciTask(10)),
-                        dispatcher.dispatchAngGetFuture("1", new FibonacciTask(10)),
-                        dispatcher.dispatchAngGetFuture("1", new FibonacciTask(40)),
-                        dispatcher.dispatchAngGetFuture("1", new FibonacciTask(45))
+                        dispatcher.dispatchAsync("1", new FibonacciTask(10)),
+                        dispatcher.dispatchAsync("1", new FibonacciTask(10)),
+                        dispatcher.dispatchAsync("1", new FibonacciTask(40)),
+                        dispatcher.dispatchAsync("1", new FibonacciTask(45))
         ).get();
 
     }

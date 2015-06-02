@@ -3,12 +3,21 @@ package vibneiro.dispatchers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import vibneiro.idgenerators.IdGenerator;
+import vibneiro.idgenerators.time.SystemDateSource;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ThreadFactory;
 
+/**
+ * @Author: Ivan Voroshilin
+ * @email:  vibneiro@gmail.com
+ * @since 1.8
+ * ThreadBoundHashDispatcher
+ *
+ */
 @ThreadSafe
 public class ThreadBoundHashDispatcher implements Dispatcher, ThreadCompletedListener {
 
@@ -16,10 +25,10 @@ public class ThreadBoundHashDispatcher implements Dispatcher, ThreadCompletedLis
 
     private static final long JOIN_TIMEOUT = 10000L;
     // +1 more thread for compensation
-    private static final int nThreads = Runtime.getRuntime().availableProcessors() + 1;
+    private int threadsCount = Runtime.getRuntime().availableProcessors() + 1;
 
-    private final ThreadFactory threadFactory;
-    private final IdGenerator dispatchIdGenerator;
+    private ThreadFactory threadFactory = new CountingThreadFactory(false);
+    private IdGenerator idGenerator = new IdGenerator("ID_", new SystemDateSource());
 
     private Worker[] workers;
     private Thread[] threads;
@@ -27,9 +36,36 @@ public class ThreadBoundHashDispatcher implements Dispatcher, ThreadCompletedLis
     private volatile boolean started;
     private volatile boolean stopped;
 
-    public ThreadBoundHashDispatcher(ThreadFactory threadFactory, IdGenerator dispatchIdGenerator) {
-        this.threadFactory = threadFactory;
-        this.dispatchIdGenerator = dispatchIdGenerator;
+    private ThreadBoundHashDispatcher() {
+    }
+
+    public static Builder newBuilder() {
+        return new ThreadBoundHashDispatcher().new Builder();
+    }
+
+    public class Builder {
+
+        private Builder() {
+        }
+
+        public Builder setThreadFactory(ThreadFactory threadFactory) {
+            ThreadBoundHashDispatcher.this.threadFactory = threadFactory;
+            return this;
+        }
+
+        public Builder setIdGenerator(IdGenerator idGenerator) {
+            ThreadBoundHashDispatcher.this.idGenerator = idGenerator;
+            return this;
+        }
+
+        public Builder setThreadsCount(int threadsCount) {
+            ThreadBoundHashDispatcher.this.threadsCount = threadsCount;
+            return this;
+        }
+
+        public ThreadBoundHashDispatcher build() {
+            return ThreadBoundHashDispatcher.this;
+        }
     }
 
     @Override
@@ -41,10 +77,10 @@ public class ThreadBoundHashDispatcher implements Dispatcher, ThreadCompletedLis
 
         started  = true;
 
-        workers = new Worker[nThreads];
-        threads = new Thread[nThreads];
+        workers = new Worker[threadsCount];
+        threads = new Thread[threadsCount];
 
-        for (int i = 0; i < nThreads; i++) {
+        for (int i = 0; i < threadsCount; i++) {
             workers[i] = new Worker(i, this);
             createNewThread(i);
         }
@@ -86,24 +122,25 @@ public class ThreadBoundHashDispatcher implements Dispatcher, ThreadCompletedLis
     }
 
     @Override
-    public void dispatch(Runnable task) {
-        dispatch(dispatchIdGenerator.nextId(), task);
+    public CompletableFuture<Void> dispatchAsync(Runnable task) {
+        return dispatchAsync(idGenerator.nextId(), task);
     }
 
     @Override
-    public void dispatch(String dispatchId, Runnable task) {
+    public CompletableFuture<Void> dispatchAsync(String dispatchId, Runnable task) {
         try {
             Worker worker = getWorker(dispatchId);
-            worker.submit(new RunnableWrapper(task, dispatchId));
+            return worker.submit(dispatchId, task);
         } catch (InterruptedException e) {
-            log.error("Interrupted, ");
+            log.error("Interrupted");
         }
+        return null;
     }
 
     private Worker getWorker(String dispatchId) {
         // despite that modulo is expensive, the requirement is to strictly bound dispatchId to a distinct Thread.
         // Thus, bit-masking for cheap indexing is more expensive for this usecase.
-        return workers[(dispatchId.hashCode() & Integer.MAX_VALUE) % nThreads];
+        return workers[(dispatchId.hashCode() & Integer.MAX_VALUE) % threadsCount];
     }
 
     private void createNewThread(int workerIndex) {
@@ -121,7 +158,7 @@ public class ThreadBoundHashDispatcher implements Dispatcher, ThreadCompletedLis
 
     private static class Worker implements Runnable {
 
-        private Queue<RunnableWrapper> tasks = new ConcurrentLinkedQueue<>();
+        private Queue<RunnableTask> tasks = new ConcurrentLinkedQueue<>();
         private final Object lock = new Object();
         private final ThreadCompletedListener listener;
         private final int workerIndex;
@@ -131,19 +168,12 @@ public class ThreadBoundHashDispatcher implements Dispatcher, ThreadCompletedLis
             this.listener = listener;
         }
 
-        public boolean hasKey(String dispatchKey) {
-            for (RunnableWrapper task : tasks) {
-                if (task.getDispatchId().equals(dispatchKey)) {
-                    return true;
-                }
-            }
-            return false;
-        }
+        public CompletableFuture<Void> submit(String dispatchId, Runnable task) throws InterruptedException {
 
-        public void submit(RunnableWrapper runnable) throws InterruptedException {
+            CompletableFuture<Void> f = new CompletableFuture<>();
+            RunnableTask runnable = new RunnableTask(dispatchId, task, f);
+
             tasks.offer(runnable);
-
-            log.debug("{} - task added: {}. Queue size: {}", this, runnable, tasks.size());
 
             if (!tasks.isEmpty()) {
                 log.debug("{} - awaking worker", this);
@@ -152,6 +182,8 @@ public class ThreadBoundHashDispatcher implements Dispatcher, ThreadCompletedLis
             synchronized (lock) {
                 lock.notifyAll();
             }
+
+            return f;
         }
 
         @Override
@@ -197,23 +229,22 @@ public class ThreadBoundHashDispatcher implements Dispatcher, ThreadCompletedLis
         }
     }
 
-    private static class RunnableWrapper implements Runnable {
+    private static class RunnableTask implements Runnable {
 
-        private Runnable runnable;
-        private String dispatchId;
+        private Runnable task;
+        private String dispatchId; // TODO for listeners
+        private CompletableFuture<Void> f;
 
-        public RunnableWrapper(Runnable runnable, String dispatchId) {
-            this.runnable = runnable;
+        public RunnableTask(String dispatchId, Runnable task, CompletableFuture<Void> f) {
+            this.task = task;
             this.dispatchId = dispatchId;
+            this.f = f;
         }
 
         @Override
         public void run() {
-            runnable.run();
-        }
-
-        public String getDispatchId() {
-            return dispatchId;
+            task.run();
+            f.complete(null);
         }
     }
 }
