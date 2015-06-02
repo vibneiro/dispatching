@@ -19,7 +19,7 @@ public class CaffeineCachedDispatcher implements Dispatcher {
         private IdGenerator idGenerator = new IdGenerator("ID_", new SystemDateSource());
         private int queueSize = 1000;
         private int threadsCount = Runtime.getRuntime().availableProcessors();
-        private ConcurrentMap<String, CompletableFuture<Void>> cachedDispatchQueues;
+        private ConcurrentMap<Object, Object> cachedDispatchQueues;
 
         private volatile boolean started;
         private volatile boolean stopped;
@@ -78,10 +78,11 @@ public class CaffeineCachedDispatcher implements Dispatcher {
         public CompletableFuture<Void> dispatchAngGetFuture(String dispatchId, Runnable task) {
 
             try {
-                return cachedDispatchQueues.compute(dispatchId, (k, queue) -> {
-                    (queue == null)
+                return (CompletableFuture<Void>) cachedDispatchQueues.compute(dispatchId, (k, queue) -> {
+                    CompletableFuture<Void> voidCompletableFuture = (queue == null)
                             ? CompletableFuture.runAsync(task)
-                            : queue.thenRunAsync(task);
+                            : ((CompletableFuture<Void>) queue).thenRunAsync(task);
+                    return voidCompletableFuture;
                 });
             } catch(Throwable t) {
                 log.warn("Exception thrown when calling dispatchAngGetFuture for dispatchId[{}]", dispatchId, t);
