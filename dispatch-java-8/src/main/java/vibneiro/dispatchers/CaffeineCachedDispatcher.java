@@ -17,7 +17,7 @@ public class CaffeineCachedDispatcher implements Dispatcher {
         private ExecutorService service;
 
         private IdGenerator idGenerator = new IdGenerator("ID_", new SystemDateSource());
-        private int queueSize = 1000;
+        private int queueSize = 1024;
         private int threadsCount = Runtime.getRuntime().availableProcessors();
         private ConcurrentMap<Object, Object> cachedDispatchQueues;
 

@@ -1,5 +1,6 @@
 package vibneiro.dispatchers;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -19,7 +20,6 @@ public class CaffeineCachedDispatcherTest {
 
     @Before
     public void setUp() throws Exception {
-
         idGenerator = new IdGenerator("ID_", new SystemDateSource());
 
         dispatcher = CaffeineCachedDispatcher
@@ -29,6 +29,12 @@ public class CaffeineCachedDispatcherTest {
                 .setExecutorService(Executors.newWorkStealingPool())
                 .build();
         dispatcher.start();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        dispatcher.stop();
+        Thread.sleep(5000);
     }
 
     @Test
