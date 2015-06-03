@@ -75,6 +75,8 @@ DispatchBenchmark.dispatchWorkStealingUniqueId  WorkStealingDispatcher  thrpt  2
 
 */
 
+//TODO @Ivan create benchmark for 1.7 as well
+
 @State(Scope.Benchmark)
 public class WorkStealingDispatcherBenchmark {
 
@@ -132,7 +134,6 @@ public class WorkStealingDispatcherBenchmark {
     @TearDown()
     public void tearDown() throws InterruptedException {
         dispatcher.stop();
-        Thread.sleep(5000);
     }
 
     private void setupWorkStealingDispatcher() {

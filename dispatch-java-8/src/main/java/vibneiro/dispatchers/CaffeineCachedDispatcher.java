@@ -121,6 +121,14 @@ public class CaffeineCachedDispatcher implements Dispatcher {
 
             stopped  = true;
 
+            CompletableFuture<?>[] futures = cachedDispatchQueues
+                    .values()
+                    .stream()
+                    .filter(v -> v != null)
+                    .toArray(CompletableFuture<?>[]::new);
+
+            CompletableFuture.allOf(futures).join();
+
             service.shutdown();
         }
 

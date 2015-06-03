@@ -72,7 +72,6 @@ public class CaffeinedDispatcherBenchmark {
     @TearDown()
     public void tearDown() throws InterruptedException {
         dispatcher.stop();
-        Thread.sleep(5000);
     }
 
     @Benchmark @Threads(32)

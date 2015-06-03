@@ -10,9 +10,12 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 /**
  * @Author: Ivan Voroshilin
@@ -97,6 +100,11 @@ public class WorkStealingDispatcher implements Dispatcher {
 
     @Override
     public CompletableFuture<Void> dispatchAsync(String dispatchId, Runnable task) {
+
+        if(stopped) {
+            //TODO @Ivan add the contract to Dispatcher.java in 1.7/1.8
+            throw new RejectedExecutionException("Dispatcher is stopped, cannot dispatch dispatchId = " + dispatchId);
+        }
 
         try {
             @SuppressWarnings("unchecked")
@@ -191,6 +199,15 @@ public class WorkStealingDispatcher implements Dispatcher {
         }
 
         stopped  = true;
+
+        CompletableFuture<?>[] futures = cachedDispatchQueues
+                .values()
+                .stream()
+                .filter(v -> v.get() != null)
+                .map(v -> v.get())
+                .toArray(CompletableFuture<?>[]::new);
+
+        CompletableFuture.allOf(futures).join();
 
         service.shutdown();
     }

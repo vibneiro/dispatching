@@ -34,7 +34,6 @@ public class CaffeineCachedDispatcherTest {
     @After
     public void tearDown() throws Exception {
         dispatcher.stop();
-        Thread.sleep(5000);
     }
 
     @Test

@@ -109,6 +109,10 @@ public class WorkStealingDispatcher implements Dispatcher {
     @GuardedBy("cacheLock")
     public ListenableFuture<?> dispatchAsync(final String dispatchId, final Runnable task) {
 
+        if(stopped) {
+            throw new RejectedExecutionException("Dispatcher is stopped, cannot dispatch dispatchId = " + dispatchId);
+        }
+
         Lock lock = cacheLock.get(dispatchId);
         lock.lock();
 
@@ -212,13 +216,24 @@ public class WorkStealingDispatcher implements Dispatcher {
         cachedDispatchQueues = new ConcurrentHashMap<>();
     }
 
-    public void stop() {
+    public void stop()  {
 
         if(stopped) {
             throw new RuntimeException("Already stopped or in progress");
         }
 
         stopped  = true;
+
+        //TODO @Ivan make more elegant blocking
+        for (WeakReferenceByValue<ListenableFuture<?>> v : cachedDispatchQueues.values()) {
+            try {
+                v.get().get();
+            } catch (InterruptedException e) {
+                throw new RejectedExecutionException("Interrupted running futures while dispatcher was being stopped", e);
+            } catch (ExecutionException e) {
+                throw new RejectedExecutionException("Interrupted running futures while dispatcher was being stopped", e);
+            }
+        }
 
         service.shutdown();
     }
