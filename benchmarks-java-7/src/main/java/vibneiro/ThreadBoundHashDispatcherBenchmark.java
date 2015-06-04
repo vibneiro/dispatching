@@ -58,17 +58,17 @@ public class ThreadBoundHashDispatcherBenchmark {
         }
 
         @Benchmark @Threads(32)
-        public void dispatchWorkStealingSameKey() throws ExecutionException, InterruptedException {
+        public void dispatchSameKey() throws ExecutionException, InterruptedException {
             dispatcher.dispatchAsync(id, task).get();
         }
 
         @Benchmark @Threads(32)
-        public void dispatchWorkStealingUniqueId() throws ExecutionException, InterruptedException {
+        public void dispatchUniqueId() throws ExecutionException, InterruptedException {
             dispatcher.dispatchAsync(task).get();
         }
 
         @Benchmark @Threads(32)
-        public void dispatchWorkStealingRandomly(ThreadState threadState) throws ExecutionException, InterruptedException {
+        public void dispatchRandomly(ThreadState threadState) throws ExecutionException, InterruptedException {
             dispatcher.dispatchAsync(rndIds[threadState.index++ & MASK], task).get();
         }
 

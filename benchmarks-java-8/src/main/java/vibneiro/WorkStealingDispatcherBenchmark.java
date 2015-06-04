@@ -12,66 +12,29 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /*
 
-with cache eviction:
+java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar WorkStealingDispatcherBenchmark -p cacheType="Unbounded" -p threadPoolType="ForkJoinPool,FixedThreadPool" -wi 5 -i 5
 
-Java 7:
+Java(TM) SE Runtime Environment (build 1.8.0_45-b14)
+Java HotSpot(TM) 64-Bit Server VM (build 25.45-b02, mixed mode)
 
-Result "dispatchWorkStealingUniqueId":
-  356640,840 ±(99.9%) 27386,200 ops/s [Average]
-  (min, avg, max) = (163535,059, 356640,840, 564204,989), stdev = 115954,886
-  CI (99.9%): [329254,640, 384027,040] (assumes normal distribution)
+# Warmup: 5 iterations, 1 s each
+# Measurement: 5 iterations, 1 s each
+# Threads: 32 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
 
-
-# Run complete. Total time: 00:13:56
-
-Benchmark                                               (dispatchType)   Mode  Cnt       Score       Error  Units
-DispatchBenchmark.dispatchWorkStealingSameKey   WorkStealingDispatcher  thrpt  200  537647,818 ± 20200,776  ops/s
-DispatchBenchmark.dispatchWorkStealingUniqueId  WorkStealingDispatcher  thrpt  200  356640,840 ± 27386,200  ops/s
-
-Java 8:
-
-Result "dispatchWorkStealingUniqueId":
-  540329,771 ±(99.9%) 33604,851 ops/s [Average]
-  (min, avg, max) = (141953,670, 540329,771, 972037,320), stdev = 142285,043
-  CI (99.9%): [506724,920, 573934,622] (assumes normal distribution)
-
-
-# Run complete. Total time: 00:15:20
-
-Benchmark                                               (dispatchType)   Mode  Cnt       Score       Error  Units
-DispatchBenchmark.dispatchWorkStealingSameKey   WorkStealingDispatcher  thrpt  200  950827,848 ± 20577,755  ops/s
-DispatchBenchmark.dispatchWorkStealingUniqueId  WorkStealingDispatcher  thrpt  200  540329,771 ± 33604,851  ops/s
-
-2. no cache eviction:
- ..
-3. threadpoolexecutor
-
-Java 7:
-Result "dispatchWorkStealingUniqueId":
-  274517,171 ±(99.9%) 17193,055 ops/s [Average]
-  (min, avg, max) = (120355,710, 274517,171, 365012,185), stdev = 72796,472
-  CI (99.9%): [257324,116, 291710,226] (assumes normal distribution)
-
-
-# Run complete. Total time: 00:13:53
-
-Benchmark                                               (dispatchType)   Mode  Cnt       Score       Error  Units
-DispatchBenchmark.dispatchWorkStealingSameKey   WorkStealingDispatcher  thrpt  200  349305,800 ±  8438,639  ops/s
-DispatchBenchmark.dispatchWorkStealingUniqueId  WorkStealingDispatcher  thrpt  200  274517,171 ± 17193,055  ops/s
-
-Java 8:
-
-Result "dispatchWorkStealingUniqueId":
-  259229,143 ±(99.9%) 18891,257 ops/s [Average]
-  (min, avg, max) = (93972,800, 259229,143, 373439,107), stdev = 79986,765
-  CI (99.9%): [240337,886, 278120,400] (assumes normal distribution)
-
-
-# Run complete. Total time: 00:13:56
-
-Benchmark                                               (dispatchType)   Mode  Cnt       Score       Error  Units
-DispatchBenchmark.dispatchWorkStealingSameKey   WorkStealingDispatcher  thrpt  200  292802,577 ±  6080,728  ops/s
-DispatchBenchmark.dispatchWorkStealingUniqueId  WorkStealingDispatcher  thrpt  200  259229,143 ± 18891,257  ops/s
+Benchmark                                                     (cacheType)  (threadPoolType)   Mode  Cnt        Score        Error  Units
+WorkStealingDispatcherBenchmark.dispatchWorkStealingRandomly      Bounded      ForkJoinPool  thrpt   50  2057776,839 ±  63806,117  ops/s
+WorkStealingDispatcherBenchmark.dispatchWorkStealingRandomly      Bounded   FixedThreadPool  thrpt   50   340119,750 ±   7539,487  ops/s
+WorkStealingDispatcherBenchmark.dispatchWorkStealingRandomly    Unbounded      ForkJoinPool  thrpt   50  2024217,776 ±  58486,680  ops/s
+WorkStealingDispatcherBenchmark.dispatchWorkStealingRandomly    Unbounded   FixedThreadPool  thrpt   50   332447,414 ±   8756,437  ops/s
+WorkStealingDispatcherBenchmark.dispatchWorkStealingSameKey       Bounded      ForkJoinPool  thrpt   50  1597950,005 ±  54539,692  ops/s
+WorkStealingDispatcherBenchmark.dispatchWorkStealingSameKey       Bounded   FixedThreadPool  thrpt   50   327599,293 ±   6652,607  ops/s
+WorkStealingDispatcherBenchmark.dispatchWorkStealingSameKey     Unbounded      ForkJoinPool  thrpt   50  1636075,138 ±  39355,216  ops/s
+WorkStealingDispatcherBenchmark.dispatchWorkStealingSameKey     Unbounded   FixedThreadPool  thrpt   50   328559,506 ±   7659,324  ops/s
+WorkStealingDispatcherBenchmark.dispatchWorkStealingUniqueId      Bounded      ForkJoinPool  thrpt   50  1051997,308 ± 209196,443  ops/s
+WorkStealingDispatcherBenchmark.dispatchWorkStealingUniqueId      Bounded   FixedThreadPool  thrpt   50   275661,013 ±  40295,430  ops/s
+WorkStealingDispatcherBenchmark.dispatchWorkStealingUniqueId    Unbounded      ForkJoinPool  thrpt   50   957729,296 ± 244614,026  ops/s
+WorkStealingDispatcherBenchmark.dispatchWorkStealingUniqueId    Unbounded   FixedThreadPool  thrpt   50   268829,420 ±  42942,558  ops/s
 
 */
 
@@ -166,17 +129,17 @@ public class WorkStealingDispatcherBenchmark {
 
     @Benchmark
     @Threads(32)
-    public void dispatchWorkStealingSameKey() throws ExecutionException, InterruptedException {
+    public void dispatchSameKey() throws ExecutionException, InterruptedException {
         dispatcher.dispatchAsync(id, task).get();
     }
 
     @Benchmark @Threads(32)
-    public void dispatchWorkStealingUniqueId() throws ExecutionException, InterruptedException {
+    public void dispatchUniqueId() throws ExecutionException, InterruptedException {
         dispatcher.dispatchAsync(task).get();
     }
 
     @Benchmark @Threads(32)
-    public void dispatchWorkStealingRandomly(ThreadState threadState) throws ExecutionException, InterruptedException {
+    public void dispatchRandomly(ThreadState threadState) throws ExecutionException, InterruptedException {
         dispatcher.dispatchAsync(rndIds[threadState.index++ & MASK], task).get();
     }
 
