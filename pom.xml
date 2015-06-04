@@ -11,6 +11,7 @@
         <module>dispatch-java-7</module>
         <module>dispatch-java-8</module>
         <module>benchmarks-java-8</module>
+        <module>benchmarks-java-7</module>
 
     </modules>
     <packaging>pom</packaging>

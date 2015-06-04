@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>benchmarks-java-8</artifactId>
+    <artifactId>benchmarks-java-7</artifactId>
 
     <groupId>vibneiro</groupId>
     <version>1.0-SNAPSHOT</version>
@@ -20,7 +20,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jmh.version>1.9.3</jmh.version>
         <javac.target>1.6</javac.target>
-        <uberjar.name>benchmarks-java-8</uberjar.name>
+        <uberjar.name>benchmarks-java-7</uberjar.name>
     </properties>
 
     <dependencies>
@@ -37,7 +37,7 @@
         </dependency>
         <dependency>
             <groupId>vibneiro.dispatch</groupId>
-            <artifactId>dispatch-java-8</artifactId>
+            <artifactId>dispatch-java-7</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 

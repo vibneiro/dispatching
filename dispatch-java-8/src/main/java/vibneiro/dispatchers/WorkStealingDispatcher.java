@@ -102,7 +102,6 @@ public class WorkStealingDispatcher implements Dispatcher {
     public CompletableFuture<Void> dispatchAsync(String dispatchId, Runnable task) {
 
         if(stopped) {
-            //TODO @Ivan add the contract to Dispatcher.java in 1.7/1.8
             throw new RejectedExecutionException("Dispatcher is stopped, cannot dispatch dispatchId = " + dispatchId);
         }
 
@@ -200,7 +199,7 @@ public class WorkStealingDispatcher implements Dispatcher {
 
         stopped  = true;
 
-        CompletableFuture<?>[] futures = cachedDispatchQueues
+        CompletableFuture<?>[] futures = cachedDispatchQueues //blocking
                 .values()
                 .stream()
                 .filter(v -> v.get() != null)
