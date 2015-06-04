@@ -10,7 +10,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import java.util.concurrent.*;
 
 /**
- * @Author: Ivan Voroshilin
+ * @author: Ivan Voroshilin
  * @email:  vibneiro@gmail.com
  * @since 1.8
  * CaffeineCachedDispatcher

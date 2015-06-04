@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * @Author: Ivan Voroshilin
+ * @author: Ivan Voroshilin
  * @email:  vibneiro@gmail.com
  * @since 1.8
  * ThreadBoundHashDispatcher

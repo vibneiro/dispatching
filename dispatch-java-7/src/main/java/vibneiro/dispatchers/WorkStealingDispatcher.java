@@ -3,7 +3,6 @@ package vibneiro.dispatchers;
 import com.google.common.util.concurrent.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import vibneiro.cache.WeakReferenceByValue;
 import vibneiro.idgenerators.IdGenerator;
 import vibneiro.idgenerators.time.SystemDateSource;
 
@@ -14,7 +13,6 @@ import java.lang.ref.ReferenceQueue;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
 
 /**
  * @Author: Ivan Voroshilin

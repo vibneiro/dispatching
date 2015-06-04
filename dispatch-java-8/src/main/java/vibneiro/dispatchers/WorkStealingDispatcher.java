@@ -2,7 +2,6 @@ package vibneiro.dispatchers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import vibneiro.cache.WeakReferenceByValue;
 import vibneiro.idgenerators.IdGenerator;
 import vibneiro.idgenerators.time.SystemDateSource;
 
@@ -10,15 +9,12 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 /**
- * @Author: Ivan Voroshilin
+ * @author: Ivan Voroshilin
  * @email:  vibneiro@gmail.com
  * @since 1.8
  * Work-Stealing Dispatcher.
