@@ -1,6 +1,9 @@
 # Dispatch
-**Dispatch** is an alternative java concurrency library that provides specialized dispatchers for parallelization of work on multicore architectures.
+**Dispatch** is an alternative highly-concurrenct library for java, providing a set of dispatchers for parallelization of work on multicore-CPU architectures.
 
+The main idea was born from high-frequency trading where low latency is a priority, smoothly moving into scalable concurrent processing, ending up with an advanced caching and a number of dispatchers.
+
+This work is a part of my research, which shows different trade-offs proved by performance benchmarks.
 
 **Author**: Ivan Voroshilin
 
@@ -9,7 +12,7 @@
 **blog**: ivoroshilin.com
 
 
-##Quick start
+##How to build:
 1. git clone https://github.com/vibneiro/dispatching.git
 2. cd dispatching
 2. mvn clean package
@@ -18,10 +21,10 @@
   - \dispatching\dispatch-java-8\target\dispatch-8.1.0-SNAPSHOT.jar
 4. See [Test examples](https://github.com/vibneiro/dispatching/tree/master/dispatch-java-8/src/test/java/vibneiro/dispatchers) to get started.
 
-##Description
+##Dispatchers
 
 ###[Dispatcher.java](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-8/src/main/java/vibneiro/dispatchers/Dispatcher.java)
-Main interface implemented by all dispatchers.
+The main interface implemented by all dispatchers.
 
 Each task has a corresponding dispatchId. Tasks with the same dispatchId get processed sequentially (syncrhonously).
 This allows to run:
@@ -60,11 +63,5 @@ When to use:
 Details:
 Each tasksId is stricty pinned to its Thread. Each thread has a separate BlockingQueue and processes tasks in the FIFO order.
 
-###TODO [PriorityQueuedDispatcher.java]
-
-###TODO Exponential back-off logic
-
-## TODO Benchmarks
-
-## TODO Experimental
+## Benchmarks
 
