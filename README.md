@@ -65,8 +65,6 @@ Each tasksId is stricty pinned to its Thread. Each thread has a separate Blockin
 
 ## Benchmarks
 
-
-
 Benchmarks were written on JMH framework and run on iMac i5 CPU @ 2.50GHz (4 core) 18 GB Yosemite.
 For testing I used the following params:
  - bounded, unbounded caches;
@@ -94,3 +92,11 @@ java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar CaffeinedDispatcher
 
 - ThreadBoundHashDispatcher:
 java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar ThreadBoundHashDispatcherBenchmark -wi 10 -i 5
+
+Results:
+
+![Random dispatchIds from a fixed set](https://cloud.githubusercontent.com/assets/3040823/8034389/e25c08fc-0def-11e5-84dd-b95140376a46.png)
+
+![Single dispatchId](https://cloud.githubusercontent.com/assets/3040823/8034425/31a448b6-0df0-11e5-8517-e3c6e0eb2976.png)
+
+![Unique dispatchids](https://cloud.githubusercontent.com/assets/3040823/8034434/48da9170-0df0-11e5-80d8-bfba759e75d7.png)
