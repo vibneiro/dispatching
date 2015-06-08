@@ -47,7 +47,7 @@ For tasks that differ in execution time, some dispatch queues might be more acti
 
 The main idea in this dispatcher it to separate the queue from the worker, FIFO semantics are retained for tasks with the same dispatchId. 
 
-Prunning of the map happens only for entries having completed futures and is done on reaching cache capacity (atomically) via WeakReference values. tryLock is used for optimistic cache eviction, the idea is inherited from Guava/Caffeine projects.
+Prunning of the map happens only for entries having completed futures and is done on reaching cache capacity (atomically) via WeakReference values. tryLock is used for optimistic cache eviction, the idea is derived from Guava/Caffeine projects.
 
 There are 2 versions of this dispatcher:
  - [JDK 7](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-7/src/main/java/vibneiro/dispatchers/WorkStealingDispatcher.java) and later: based on Guava's *ListenableFuture*.
@@ -65,3 +65,30 @@ Each tasksId is stricty pinned to its Thread. Each thread has a separate Blockin
 
 ## Benchmarks
 
+Benchmarks were written on JMH framework and run on iMac i5 CPU @ 2.50GHz (4 core) 18 GB Yosemite.
+For testing I used the following params:
+ - bounded, unbounded caches;
+ - 2 executors (ThreadPoolExecutor, ForkJoinPool);
+ - 32 user threads
+ - 3 test-cases: 1) a single queue 2) 1 time-queue (1 task per queue). 3) randomly filled multiple queues
+
+[java 7 Benchmarks](https://github.com/vibneiro/dispatching/tree/master/benchmarks-java-7)
+
+[java 8 Benchmarks](https://github.com/vibneiro/dispatching/tree/master/benchmarks-java-8)
+
+How to run (java 8, for java 7 replace with "7 where appropriate below):
+
+1. git clone https://github.com/vibneiro/dispatching.git
+2. cd dispatching
+3. mvn clean package
+4. cd benchmarks-java-8
+
+5.
+ - CaffeinedDispatcherBenchmark: 
+java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar CaffeinedDispatcherBenchmark -p cacheType="Bounded, Unbounded" -wi 5 -i 5
+ 
+ - WorkStealingDispatcherBenchmark:
+ java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar WorkStealingDispatcherBenchmark -p cacheType="Unbounded" -p threadPoolType="ForkJoinPool,FixedThreadPool" -wi 5 -i 5
+
+- ThreadBoundHashDispatcher:
+java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar ThreadBoundHashDispatcherBenchmark -wi 10 -i 5
