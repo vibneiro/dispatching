@@ -95,6 +95,8 @@ java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar ThreadBoundHashDisp
 
 Results:
 
+####Bounded Caching:
+
 ![Random dispatchIds from a fixed set](https://cloud.githubusercontent.com/assets/3040823/8034389/e25c08fc-0def-11e5-84dd-b95140376a46.png)
 
 ![Single dispatchId](https://cloud.githubusercontent.com/assets/3040823/8034425/31a448b6-0df0-11e5-8517-e3c6e0eb2976.png)
