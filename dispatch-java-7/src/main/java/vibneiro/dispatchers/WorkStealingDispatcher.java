@@ -225,7 +225,11 @@ public class WorkStealingDispatcher implements Dispatcher {
         //TODO @Ivan make more elegant blocking
         for (WeakReferenceByValue<ListenableFuture<?>> v : cachedDispatchQueues.values()) {
             try {
-                v.get().get();
+                ListenableFuture<?> f = v.get();
+                if (f != null) {
+                    f.get();
+                }
+
             } catch (InterruptedException e) {
                 throw new RejectedExecutionException("Interrupted running futures while dispatcher was being stopped", e);
             } catch (ExecutionException e) {
