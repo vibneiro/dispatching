@@ -85,13 +85,12 @@ How to run (java 8, for java 7 replace with "7 where appropriate below):
 
 5.
  - CaffeinedDispatcherBenchmark: 
-java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar CaffeinedDispatcherBenchmark -p cacheType="Bounded, Unbounded" -wi 5 -i 5
- 
+java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8-1.0-SNAPSHOT.jar CaffeinedDispatcherBenchmark -p cacheType="Bounded, Unbounded" -wi 5 -i 5
  - WorkStealingDispatcherBenchmark:
- java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar WorkStealingDispatcherBenchmark -p cacheType="Unbounded" -p threadPoolType="ForkJoinPool,FixedThreadPool" -wi 5 -i 5
+ java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8-1.0-SNAPSHOT.jar WorkStealingDispatcherBenchmark -p cacheType="Unbounded" -p threadPoolType="ForkJoinPool,FixedThreadPool" -wi 5 -i 5
 
 - ThreadBoundHashDispatcher:
-java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar ThreadBoundHashDispatcherBenchmark -wi 10 -i 5
+java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8-1.0-SNAPSHOT.jar ThreadBoundHashDispatcherBenchmark -wi 10 -i 5
 
 Results:
 
