@@ -1,10 +1,6 @@
 # Dispatch
 **Dispatch** is an alternative highly-concurrenct library for java, providing a set of dispatchers for parallelization of work on multicore-CPU architectures.
 
-The main idea was born from high-frequency trading where low latency is a priority, smoothly moving into scalable concurrent processing, ending up with an advanced caching and a number of dispatchers.
-
-This work is a part of my research, which shows different trade-offs proved by performance benchmarks.
-
 **Author**: Ivan Voroshilin
 
 **email**: vibneiro@gmail.com
