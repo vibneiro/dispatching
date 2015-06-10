@@ -91,10 +91,10 @@ java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar CaffeinedDispatcher
 - ThreadBoundHashDispatcher:
 java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar ThreadBoundHashDispatcherBenchmark -wi 10 -i 5
 
-## Benchmark graphs of results:
+## Benchmark graphs:
 
 Important note:
-As can be seen, after introducing [significant updates](http://openjdk.java.net/jeps/155) to Java 8, ForkJoinPool is way more scalable, including ConcurrentHashMap changes, compated to JDK 7.
+As can be seen, after introducing [significant updates](http://openjdk.java.net/jeps/155) to Java 8, ForkJoinPool is way more scalable, including ConcurrentHashMap changes compared to JDK 7.
 
 ####JDK 8:
 
