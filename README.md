@@ -61,12 +61,15 @@ Each tasksId is stricty pinned to its Thread. Each thread has a separate Blockin
 
 ## Benchmarks
 
-Benchmarks were written on JMH framework and run on iMac i5 CPU @ 2.50GHz (4 core) 18 GB Yosemite.
+Benchmarks were written on JMH framework and run on iMac Core i5 CPU @ 2.50GHz (4 cores) 8 GB, Yosemite OS.
 For testing I used the following params:
  - bounded, unbounded caches;
  - 2 executors (ThreadPoolExecutor, ForkJoinPool);
  - 32 user threads
- - 3 test-cases: 1) a single queue 2) 1 time-queue (1 task per queue). 3) randomly filled multiple queues
+ - 3 test-cases: 
+   1) A single queue: putting new tasks always to the same dispatchId.
+   2) One time-queue (queue.size = 1): dispatchId is always incremented by 1.
+   3) Randomly filled multiple queues: a finite set of dispatchIds.
 
 [java 7 Benchmarks](https://github.com/vibneiro/dispatching/tree/master/benchmarks-java-7)
 
@@ -88,7 +91,10 @@ java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar CaffeinedDispatcher
 - ThreadBoundHashDispatcher:
 java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar ThreadBoundHashDispatcherBenchmark -wi 10 -i 5
 
-Results:
+## Benchmark graphs of results:
+
+Important note:
+As can be seen, after introducing [significant updates](http://openjdk.java.net/jeps/155) to Java 8, ForkJoinPool is way more scalable, including ConcurrentHashMap changes, compated to JDK 7.
 
 ####JDK 8:
 
