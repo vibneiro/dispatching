@@ -90,6 +90,8 @@ java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar ThreadBoundHashDisp
 
 Results:
 
+####JDK 8:
+
 ####Bounded Caching:
 
 ![Random dispatchIds from a fixed set](https://cloud.githubusercontent.com/assets/3040823/8034389/e25c08fc-0def-11e5-84dd-b95140376a46.png)
@@ -104,3 +106,13 @@ Results:
 ![Single dispatchId](https://cloud.githubusercontent.com/assets/3040823/8034903/f2284c50-0df4-11e5-8932-f9ea9d084de0.png)
 
 ![Unique dispatchids](https://cloud.githubusercontent.com/assets/3040823/8034892/e4e1d7be-0df4-11e5-9684-970f1f2fd706.png)
+
+####JDK 7:
+
+####Unbounded Caching:
+
+![Random dispatchIds from a fixed set](https://cloud.githubusercontent.com/assets/3040823/8080802/2c58486a-0f78-11e5-9e69-cb505e8df29d.png)
+
+![Single dispatchId](https://cloud.githubusercontent.com/assets/3040823/8081150/2db6f596-0f7b-11e5-8fe8-bd43fff7695a.png)
+
+![Unique dispatchids](https://cloud.githubusercontent.com/assets/3040823/8081173/66826874-0f7b-11e5-9e40-b06fae328b05.png)
