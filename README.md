@@ -62,6 +62,8 @@ Each tasksId is stricty pinned to its Thread. Each thread has a separate Blockin
 ## Benchmarks
 
 Benchmarks were written on JMH framework and run on iMac Core i5 CPU @ 2.50GHz (4 cores) 8 GB, Yosemite OS.
+Benchmark mode: Throughput, ops/time
+
 For testing I used the following params:
  - bounded, unbounded caches;
  - 2 executors (ThreadPoolExecutor, ForkJoinPool);
@@ -113,7 +115,7 @@ As can be seen, after introducing [significant updates](http://openjdk.java.net/
 
 ![Unique dispatchids](https://cloud.githubusercontent.com/assets/3040823/8034892/e4e1d7be-0df4-11e5-9684-970f1f2fd706.png)
 
-####JDK 7:
+####JDK 7: version jdk1.7.0_71
 
 ####Unbounded Caching:
 
