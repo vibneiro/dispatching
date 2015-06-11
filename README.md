@@ -48,7 +48,7 @@ The main idea in this dispatcher it to separate the queue from the worker, FIFO 
 
 Prunning of the map happens only for entries having completed futures and is done on reaching cache capacity (atomically) via WeakReference values. tryLock is used for optimistic cache eviction, the idea is derived from Guava/Caffeine projects.
 
-There are 2 versions of this dispatcher:
+There are 2 versions of this dispatcher, the speed signficantly changes, giving a preference to JDK 8 enhancements:
  - [JDK 7](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-7/src/main/java/vibneiro/dispatchers/WorkStealingDispatcher.java) and later: based on Guava's *ListenableFuture*.
  - [JDK 8](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-8/src/main/java/vibneiro/dispatchers/WorkStealingDispatcher.java) and later: based on *CompletableFuture*.
 
@@ -56,7 +56,7 @@ There are 2 versions of this dispatcher:
 
 When to use:
 
-1. Each tasksId must be  stricty pinned to a particular Thread. 
+1. Each tasksId must be stricty pinned to a particular Thread. 
 2. Tasks mustn't differ much in the computation size.
 
 Details:
@@ -88,7 +88,10 @@ The following  params are used for JMH benchmarking:
  - 32 user threads for all 3 tests;
    * Purpose: analyze contention impact on concurrent data-structures.
 
-##How to run the benchmark (java 8, for java 7 replace with "7 where appropriate below):
+##How to run the benchmark
+
+(For JDK 7, just replace with a digit 8 with 7 where appropriate, as per below):
+
 ```{r, engine='Shell', count_lines}
 git clone https://github.com/vibneiro/dispatching.git
 cd dispatching
