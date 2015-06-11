@@ -70,44 +70,50 @@ All the benchmark work with an empty Runnable synthetic task to mitigate side-ef
 Benchmark mode: Throughput, ops/time
 ###TODO: measure with 1 user thread.
 
- 3 test-cases: 
-   1) A single dispatch-queue: putting new tasks always to the same dispatchId.
-   2) Counting dispatchId: one-off queue of size = 1 per task, since dispatchId is always incremented by 1.
-   3) Randomly filled set of queues with a size = 32768. TODO: try 1024
-
+3 test-cases: 
+   1. A single dispatch-queue: putting new tasks always to the same dispatchId.
+   2. Counting dispatchId: one-off queue of size = 1 per task, since dispatchId is always incremented by 1.
+   3. Randomly filled set of queues with a size = 32768. TODO: try 1024
 
 The following  params are used for JMH benchmarking:
  - { Bounded, Unbounded } caches; 
-   Purpose: analyze the impact of eviction time on the overall performance.
+   * Purpose: analyze the impact of eviction time on the overall performance.
  - 2 types of ExecutorService { ThreadPoolExecutor, ForkJoinPool };
-   Purpose: analyze the impact of 2 different executors on throughput.
+   * Purpose: analyze the impact of 2 different executors on throughput.
  - 32 user threads for all 3 tests;
-   Purpose: analyze contention impact on concurrent data-structures.
+   * Purpose: analyze contention impact on concurrent data-structures.
 
 [java 7 Benchmarks](https://github.com/vibneiro/dispatching/tree/master/benchmarks-java-7)
 
 [java 8 Benchmarks](https://github.com/vibneiro/dispatching/tree/master/benchmarks-java-8)
 
-How to run (java 8, for java 7 replace with "7 where appropriate below):
+##How to run the benchmark (java 8, for java 7 replace with "7 where appropriate below):
+```{r, engine='Shell', count_lines}
+git clone https://github.com/vibneiro/dispatching.git
+cd dispatching
+mvn clean package
+cd benchmarks-java-8
+```
 
-1. git clone https://github.com/vibneiro/dispatching.git
-2. cd dispatching
-3. mvn clean package
-4. cd benchmarks-java-8
-
-5.
  - CaffeinedDispatcherBenchmark: 
+```{r, engine='Shell', count_lines}
 java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar CaffeinedDispatcherBenchmark -p cacheType="Bounded, Unbounded" -wi 5 -i 5
+```
+
  - WorkStealingDispatcherBenchmark:
+```{r, engine='Shell', count_lines}
  java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar WorkStealingDispatcherBenchmark -p cacheType="Unbounded" -p threadPoolType="ForkJoinPool,FixedThreadPool" -wi 5 -i 5
+```
 
 - ThreadBoundHashDispatcher:
+```{r, engine='Shell', count_lines}
 java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar ThreadBoundHashDispatcherBenchmark -wi 10 -i 5
+```
 
 ## Benchmark graphs:
 
 Important note:
-As can be seen, after introducing [significant updates](http://openjdk.java.net/jeps/155) to Java 8, ForkJoinPool is way more scalable, including ConcurrentHashMap changes compared to JDK 7.
+As can be seen, after introducing [significant updates](http://openjdk.java.net/jeps/155) to Java 8, ForkJoinPool is a way more scalable, including ConcurrentHashMap changes compared to JDK 7.
 
 ####JDK 8:
 
