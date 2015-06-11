@@ -18,7 +18,8 @@ mvn clean package
 Jar-files are under:
   - \dispatching\dispatch-java-7\target\dispatch-7.1.0-SNAPSHOT.jar
   - \dispatching\dispatch-java-8\target\dispatch-8.1.0-SNAPSHOT.jar
-See [Test examples](https://github.com/vibneiro/dispatching/tree/master/dispatch-java-8/src/test/java/vibneiro/dispatchers) to get started.
+  - 
+See [Test examples](https://github.com/vibneiro/dispatching/tree/master/dispatch-java-8/src/test/java/vibneiro/dispatchers) to kick-start.
 
 ##Dispatchers
 
