@@ -9,7 +9,7 @@
 
 
 ##How to build:
-'''Shell
+```{r, engine='bash', count_lines}
 git clone https://github.com/vibneiro/dispatching.git
 cd dispatching
 mvn clean package
