@@ -59,19 +59,27 @@ When to use:
 Details:
 Each tasksId is stricty pinned to its Thread. Each thread has a separate BlockingQueue and processes tasks in the FIFO order.
 
-## Benchmarks
+## MicroBenchmarks
 
-Benchmarks were written on JMH framework and run on iMac Core i5 CPU @ 2.50GHz (4 cores) 8 GB, Yosemite OS.
+Benchmarks were written on JMH framework for JDK 7 and 8 separately and run on iMac Core i5 CPU @ 2.50GHz (4 cores) 8 GB, Yosemite OS.
+All the benchmark work with an empty Runnable synthetic task to mitigate side-effects.
+
 Benchmark mode: Throughput, ops/time
+###TODO: measure with 1 user thread.
 
-For testing I used the following params:
- - bounded, unbounded caches;
- - 2 executors (ThreadPoolExecutor, ForkJoinPool);
- - 32 user threads
- - 3 test-cases: 
-   1) A single queue: putting new tasks always to the same dispatchId.
-   2) One time-queue (queue.size = 1): dispatchId is always incremented by 1.
-   3) Randomly filled multiple queues: a finite set of dispatchIds.
+ 3 test-cases: 
+   1) A single dispatch-queue: putting new tasks always to the same dispatchId.
+   2) Counting dispatchId: one-off queue of size = 1 per task, since dispatchId is always incremented by 1.
+   3) Randomly filled set of queues with a size = 32768. TODO: try 1024
+
+
+The following  params are used for JMH benchmarking:
+ - { Bounded, Unbounded } caches; 
+   Purpose: analyze the impact of eviction time on the overall performance.
+ - 2 types of ExecutorService { ThreadPoolExecutor, ForkJoinPool };
+   Purpose: analyze the impact of 2 different executors on throughput.
+ - 32 user threads for all 3 tests;
+   Purpose: analyze contention impact on concurrent data-structures.
 
 [java 7 Benchmarks](https://github.com/vibneiro/dispatching/tree/master/benchmarks-java-7)
 
