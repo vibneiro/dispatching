@@ -67,7 +67,12 @@ Each tasksId is stricty pinned to its Thread. Each thread has a separate Blockin
 Benchmarks were written on JMH framework for JDK 7 and 8 separately and run on iMac Core i5 CPU @ 2.50GHz (4 cores) 8 GB, Yosemite OS.
 All the benchmark work with an empty Runnable synthetic task to mitigate side-effects.
 
+[Source-code for JDK7 Benchmarks](https://github.com/vibneiro/dispatching/tree/master/benchmarks-java-7)
+
+[Source-code for JDK8 Benchmarks](https://github.com/vibneiro/dispatching/tree/master/benchmarks-java-8)
+
 Benchmark mode: Throughput, ops/time
+
 ###TODO: measure with 1 user thread.
 
 3 test-cases: 
@@ -82,10 +87,6 @@ The following  params are used for JMH benchmarking:
    * Purpose: analyze the impact of 2 different executors on throughput.
  - 32 user threads for all 3 tests;
    * Purpose: analyze contention impact on concurrent data-structures.
-
-[java 7 Benchmarks](https://github.com/vibneiro/dispatching/tree/master/benchmarks-java-7)
-
-[java 8 Benchmarks](https://github.com/vibneiro/dispatching/tree/master/benchmarks-java-8)
 
 ##How to run the benchmark (java 8, for java 7 replace with "7 where appropriate below):
 ```{r, engine='Shell', count_lines}
