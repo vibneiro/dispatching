@@ -1,11 +1,11 @@
 # Dispatch
 **Dispatch** is an alternative highly-concurrenct library for java, providing a set of dispatchers for parallelization of work on multicore-CPU architectures.
 
+For more thorough understanding, please follow [this post](http://ivoroshilin.com/2015/06/08/researching-work-execution-with-dispatchers-in-java-8-from-naive-to-akka-like-design/)
+
 **Author**: Ivan Voroshilin
 
 **email**: vibneiro@gmail.com
-
-**blog**: ivoroshilin.com
 
 ##How to build:
 ```{r, engine='Shell', count_lines}
