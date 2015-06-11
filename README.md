@@ -119,7 +119,7 @@ java -server -Xms5G -Xmx5G -jar target/benchmarks-java-8.jar ThreadBoundHashDisp
 Important note:
 As can be seen, after introducing [significant updates](http://openjdk.java.net/jeps/155) to Java 8, ForkJoinPool is a way more scalable, including ConcurrentHashMap changes compared to JDK 7.
 
-####JDK 8:
+####JDK 8: 1.8.0_45
 
 ####Bounded Caching:
 
