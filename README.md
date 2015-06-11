@@ -7,13 +7,6 @@
 
 **blog**: ivoroshilin.com
 
-require 'redcarpet'
-markdown = Redcarpet.new("Hello World!")
-
-```ruby
-puts markdown.to_html
-```
-
 ##How to build:
 ```{r, engine='Shell', count_lines}
 git clone https://github.com/vibneiro/dispatching.git
