@@ -7,9 +7,10 @@
 
 **blog**: ivoroshilin.com
 
-```ruby
 require 'redcarpet'
 markdown = Redcarpet.new("Hello World!")
+
+```ruby
 puts markdown.to_html
 ```
 
