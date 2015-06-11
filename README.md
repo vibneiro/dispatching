@@ -13,7 +13,7 @@
 git clone https://github.com/vibneiro/dispatching.git
 cd dispatching
 mvn clean package
-'''
+```
 
 Jar-files are under:
   - \dispatching\dispatch-java-7\target\dispatch-7.1.0-SNAPSHOT.jar
