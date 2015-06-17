@@ -26,11 +26,10 @@ See [Test examples](https://github.com/vibneiro/dispatching/tree/master/dispatch
 The main interface implemented by all dispatchers.
 
 Each task has a corresponding dispatchId. Tasks with the same dispatchId get processed sequentially (syncrhonously).
-This allows to run:
- - Not thread-safe tasks
- - Dependent tasks
- - Time-ordered tasks
+This allows to run ordered tasks.
 
+All dispatchers have an option to schedule tasks in your Executor, by default it is ForkJoinPool.
+ 
 ## Types of dispatchers
 
 ###[WorkStealingDispatcher.java](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-8/src/main/java/vibneiro/dispatchers/WorkStealingDispatcher.java)
@@ -40,15 +39,15 @@ When to use:
 1. Unbalanced tasks cause inefficient CPU-utilization. The goal is to use CPU-cores more efficiently.
 2. Tasks are not blocked by I/O and reasonably small to be proccessed. This come in handy, especially for event-driven async processing. 
 
-Details:
+Algorithm:
 
-For tasks that differ in execution time, some dispatch queues might be more active than others causing unfair balance among workers (threads). ForkJoinPool is used under the hood for this reason by default. The work is spread out more effeciently unlike in the standard implementations of Executors by the virtue of work-stealing. However, you can pass in your ExecutorService.
+The main idea in this dispatcher it to separate the queue from the worker-thread, FIFO semantics are retained for tasks with the same dispatchId. Any free thread can take on a task for execution.
 
-The main idea in this dispatcher it to separate the queue from the worker, FIFO semantics are retained for tasks with the same dispatchId. 
+For tasks that differ in execution time, some dispatch queues might be more active than others causing unfair balance among workers (threads). Even for equal tasks, this scales much better unlike in the standard Executors, which is proved by benchmarking tests below. ForkJoinPool is used under the hood for this reason by default. The work is spread out more effeciently by the virtue of work-stealing and reduced contention compared to the standard implementations of Executors.
 
-Prunning of the map happens only for entries having completed futures and is done on reaching cache capacity (atomically) via WeakReference values. tryLock is used for optimistic cache eviction, the idea is derived from Guava/Caffeine projects.
+Prunning of the map happens only for entries that have completed futures and is done on reaching cache capacity (atomically) via WeakReference values. tryLock is used for optimistic cache eviction (this idea is derived from Guava/Caffeine projects).
 
-There are 2 versions of this dispatcher, the speed signficantly changes, giving a preference to JDK 8 enhancements:
+There are 2 versions of this dispatcher, the performance signficantly differs, giving a preference to JDK 8 enhancements:
  - [JDK 7](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-7/src/main/java/vibneiro/dispatchers/WorkStealingDispatcher.java) and later: based on Guava's *ListenableFuture*.
  - [JDK 8](https://github.com/vibneiro/dispatching/blob/master/dispatch-java-8/src/main/java/vibneiro/dispatchers/WorkStealingDispatcher.java) and later: based on *CompletableFuture*.
 
@@ -56,24 +55,22 @@ There are 2 versions of this dispatcher, the speed signficantly changes, giving 
 
 When to use:
 
-1. Each tasksId must be stricty pinned to a particular Thread. 
+1. Each tasksId must be stricty pinned to a particular Thread. This come in handy for low latency systems, where context switch is unacceptable (CPU affinity also can be exploited additionaly).
 2. Tasks mustn't differ much in the computation size.
 
-Details:
-Each tasksId is stricty pinned to its Thread. Each thread has a separate BlockingQueue and processes tasks in the FIFO order.
+Algorithm:
+Each tasksId is stricty pinned to its Thread. Each workerthread has a separate ConcurrentBlockingQueue and processes tasks in the FIFO order. 
 
 ## MicroBenchmarks
 
 Benchmarks were written on JMH framework for JDK 7 and 8 separately and run on iMac Core i5 CPU @ 2.50GHz (4 cores) 8 GB, Yosemite OS.
-All the benchmark work with an empty Runnable synthetic task to mitigate side-effects.
+An empty Runnable synthetic task is used to mitigate side-effects.
 
 [Source-code for JDK7 Benchmarks](https://github.com/vibneiro/dispatching/tree/master/benchmarks-java-7)
 
 [Source-code for JDK8 Benchmarks](https://github.com/vibneiro/dispatching/tree/master/benchmarks-java-8)
 
 Benchmark mode: Throughput, ops/time
-
-###TODO: measure with 1 user thread.
 
 3 test-cases: 
    1. A single dispatch-queue: putting new tasks always to the same dispatchId.
