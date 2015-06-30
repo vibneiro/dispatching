@@ -45,10 +45,16 @@ public class WorkStealingDispatcherBenchmark {
     String id;
     AtomicInteger intId;
 
-    @Param({"ForkJoinPool", "FixedThreadPool" })
+    final static String FJPOOL = "ForkJoinPool";
+    final static String FIXEDTPOOL = "FixedThreadPool";
+
+    @Param({FJPOOL, FIXEDTPOOL})
     String threadPoolType;
 
-    @Param({"Bounded", "Unbounded" })
+    final static String BOUNDED = "Bounded";
+    final static String UNBOUNDED = "Unbounded";
+
+    @Param({BOUNDED, UNBOUNDED})
     String cacheType;
 
     String[] rndIds;
@@ -72,9 +78,9 @@ public class WorkStealingDispatcherBenchmark {
 
         id = "ID";
 
-        if (threadPoolType.equals("ForkJoinPool")) {
+        if (threadPoolType.equals(FJPOOL)) {
             setupWorkStealingDispatcher();
-        } else if (threadPoolType.equals("FixedThreadPool")) {
+        } else if (threadPoolType.equals(FIXEDTPOOL)) {
             setupThreadPooledWorkStealingDispatcher();
         } else {
             throw new AssertionError("Unknown threadPoolType: " + threadPoolType);
@@ -97,8 +103,8 @@ public class WorkStealingDispatcherBenchmark {
         WorkStealingDispatcher.Builder builder = WorkStealingDispatcher
                 .newBuilder()
                 .setIdGenerator(new IdGenerator("ID_", new SystemDateSource()));
-        if(cacheType.equals("Bounded")) {
-            builder.setQueueSize(10);
+        if(cacheType.equals(BOUNDED)) {
+            builder.setQueueSize(256);
         } else {
             builder.unBoundedCache();
         }
@@ -113,8 +119,8 @@ public class WorkStealingDispatcherBenchmark {
                 .setIdGenerator(new IdGenerator("ID_", new SystemDateSource()))
                 .setExecutorService(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
 
-        if(cacheType.equals("Bounded")) {
-            builder.setQueueSize(1024);
+        if(cacheType.equals(BOUNDED)) {
+            builder.setQueueSize(256);
         } else {
             builder.unBoundedCache();
         }
@@ -123,20 +129,19 @@ public class WorkStealingDispatcherBenchmark {
         dispatcher.start();
     }
 
-    @Benchmark
-    @Threads(32)
-    public void dispatchSameKey() throws ExecutionException, InterruptedException {
-        dispatcher.dispatchAsync(id, task).get();
+    @Benchmark @Threads(4)
+    public Object dispatchSameKey() throws ExecutionException, InterruptedException {
+        return dispatcher.dispatchAsync(id, task).get();
     }
 
-    @Benchmark @Threads(32)
-    public void dispatchUniqueId() throws ExecutionException, InterruptedException {
-        dispatcher.dispatchAsync(task).get();
+    @Benchmark @Threads(4)
+    public Object dispatchUniqueId() throws ExecutionException, InterruptedException {
+        return dispatcher.dispatchAsync(task).get();
     }
 
-    @Benchmark @Threads(32)
-    public void dispatchRandomly(ThreadState threadState) throws ExecutionException, InterruptedException {
-        dispatcher.dispatchAsync(rndIds[threadState.index++ & MASK], task).get();
+    @Benchmark @Threads(4)
+    public Object dispatchRandomly(ThreadState threadState) throws ExecutionException, InterruptedException {
+        return dispatcher.dispatchAsync(rndIds[threadState.index++ & MASK], task).get();
     }
 
 }

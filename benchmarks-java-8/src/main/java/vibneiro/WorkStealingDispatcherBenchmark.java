@@ -8,6 +8,7 @@ import vibneiro.idgenerators.time.SystemDateSource;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*
@@ -36,6 +37,14 @@ WorkStealingDispatcherBenchmark.dispatchWorkStealingUniqueId      Bounded   Fixe
 WorkStealingDispatcherBenchmark.dispatchWorkStealingUniqueId    Unbounded      ForkJoinPool  thrpt   50   957729,296 ± 244614,026  ops/s
 WorkStealingDispatcherBenchmark.dispatchWorkStealingUniqueId    Unbounded   FixedThreadPool  thrpt   50   268829,420 ±  42942,558  ops/s
 
+------------
+Benchmark                                         (cacheType)  (threadPoolType)   Mode  Cnt        Score        Error  Units
+WorkStealingDispatcherBenchmark.dispatchRandomly    Unbounded      ForkJoinPool  thrpt   50  1185556,260 ±  56554,526  ops/s
+WorkStealingDispatcherBenchmark.dispatchRandomly    Unbounded   FixedThreadPool  thrpt   50    80944,648 ±   1061,167  ops/s
+WorkStealingDispatcherBenchmark.dispatchSameKey     Unbounded      ForkJoinPool  thrpt   50  1309529,666 ±  35026,142  ops/s
+WorkStealingDispatcherBenchmark.dispatchSameKey     Unbounded   FixedThreadPool  thrpt   50    74297,589 ±    522,491  ops/s
+WorkStealingDispatcherBenchmark.dispatchUniqueId    Unbounded      ForkJoinPool  thrpt   50   710174,457 ± 125705,054  ops/s
+WorkStealingDispatcherBenchmark.dispatchUniqueId    Unbounded   FixedThreadPool  thrpt   50    81077,133 ±   2499,133  ops/s
 */
 
 @State(Scope.Benchmark)
@@ -49,18 +58,23 @@ public class WorkStealingDispatcherBenchmark {
     String id;
     AtomicInteger intId;
 
-    @Param({"ForkJoinPool", "FixedThreadPool" })
+    final static String FJPOOL = "ForkJoinPool";
+    final static String FIXEDTPOOL = "FixedThreadPool";
+
+    @Param({FJPOOL, FIXEDTPOOL})
     String threadPoolType;
 
-    @Param({"Bounded", "Unbounded" })
+    final static String BOUNDED = "Bounded";
+    final static String UNBOUNDED = "Unbounded";
+
+    @Param({BOUNDED, UNBOUNDED})
     String cacheType;
 
     String[] rndIds;
 
     @State(Scope.Thread)
     public static class ThreadState {
-        static final Random random = new Random();
-        int index = random.nextInt();
+        int index = ThreadLocalRandom.current().nextInt();
     }
 
     @Setup
@@ -76,9 +90,9 @@ public class WorkStealingDispatcherBenchmark {
 
         id = "ID";
 
-        if (threadPoolType.equals("ForkJoinPool")) {
+        if (threadPoolType.equals(FJPOOL)) {
             setupWorkStealingDispatcher();
-        } else if (threadPoolType.equals("FixedThreadPool")) {
+        } else if (threadPoolType.equals(FIXEDTPOOL)) {
             setupThreadPooledWorkStealingDispatcher();
         } else {
             throw new AssertionError("Unknown threadPoolType: " + threadPoolType);
@@ -101,8 +115,8 @@ public class WorkStealingDispatcherBenchmark {
         WorkStealingDispatcher.Builder builder = WorkStealingDispatcher
                 .newBuilder()
                 .setIdGenerator(new IdGenerator("ID_", new SystemDateSource()));
-        if(cacheType.equals("Bounded")) {
-            builder.setQueueSize(10);
+        if(cacheType.equals(BOUNDED)) {
+            builder.setQueueSize(256);
         } else {
             builder.unBoundedCache();
         }
@@ -117,8 +131,8 @@ public class WorkStealingDispatcherBenchmark {
                 .setIdGenerator(new IdGenerator("ID_", new SystemDateSource()))
                 .setExecutorService(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
 
-        if(cacheType.equals("Bounded")) {
-            builder.setQueueSize(10);
+        if(cacheType.equals(BOUNDED)) {
+            builder.setQueueSize(256);
         } else {
             builder.unBoundedCache();
         }
@@ -128,17 +142,17 @@ public class WorkStealingDispatcherBenchmark {
     }
 
     @Benchmark
-    @Threads(32)
+    @Threads(4)
     public void dispatchSameKey() throws ExecutionException, InterruptedException {
         dispatcher.dispatchAsync(id, task).get();
     }
 
-    @Benchmark @Threads(32)
+    @Benchmark @Threads(4)
     public void dispatchUniqueId() throws ExecutionException, InterruptedException {
         dispatcher.dispatchAsync(task).get();
     }
 
-    @Benchmark @Threads(32)
+    @Benchmark @Threads(4)
     public void dispatchRandomly(ThreadState threadState) throws ExecutionException, InterruptedException {
         dispatcher.dispatchAsync(rndIds[threadState.index++ & MASK], task).get();
     }

@@ -5,6 +5,7 @@ import vibneiro.dispatchers.ThreadBoundHashDispatcher;
 
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*
@@ -43,8 +44,7 @@ public class ThreadBoundHashDispatcherBenchmark {
 
         @State(Scope.Thread)
         public static class ThreadState {
-            static final Random random = new Random();
-            int index = random.nextInt();
+            int index = ThreadLocalRandom.current().nextInt();
         }
 
         @Setup
@@ -78,19 +78,19 @@ public class ThreadBoundHashDispatcherBenchmark {
             dispatcher.stop();
         }
 
-        @Benchmark @Threads(32)
-        public void dispatcSameKey() throws ExecutionException, InterruptedException {
-            dispatcher.dispatchAsync(id, task).get();
+        @Benchmark @Threads(4)
+        public Void dispatcSameKey() throws ExecutionException, InterruptedException {
+            return dispatcher.dispatchAsync(id, task).get();
         }
 
-        @Benchmark @Threads(32)
-        public void dispatchUniqueId() throws ExecutionException, InterruptedException {
-            dispatcher.dispatchAsync(task).get();
+        @Benchmark @Threads(4)
+        public Void dispatchUniqueId() throws ExecutionException, InterruptedException {
+            return dispatcher.dispatchAsync(task).get();
         }
 
-        @Benchmark @Threads(32)
-        public void dispatchRandomly(ThreadState threadState) throws ExecutionException, InterruptedException {
-            dispatcher.dispatchAsync(rndIds[threadState.index++ & MASK], task).get();
+        @Benchmark @Threads(4)
+        public Void dispatchRandomly(ThreadState threadState) throws ExecutionException, InterruptedException {
+            return dispatcher.dispatchAsync(rndIds[threadState.index++ & MASK], task).get();
         }
 
     }
